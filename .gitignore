@@ -1,0 +1,17 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/Backend/.vs/EAA
+/Backend/EAA/bin/Debug/net8.0
+/Backend/EAA/obj
+/Backend/EAA/wwwroot/logs
+/Backend/EAA.Application/bin/Debug/net8.0
+/Backend/EAA.Application/obj
+/Backend/EAA.Domain/bin/Debug/net8.0
+/Backend/EAA.Domain/obj
+/Backend/EAA.Infrastructure/bin/Debug/net8.0
+/Backend/EAA.Infrastructure/obj
+/Backend/EAA.Services/bin/Debug/net8.0
+/Backend/EAA.Services/obj
