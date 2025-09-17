@@ -1,0 +1,32 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace EAA.Domain.DTO.Response.Employee
+{
+    public class UpdateEmployeeResponse_DTO
+    {
+            public int EmployeeId { get; set; }               // Auto-generated
+            public string EmpCode { get; set; }               // HR-assigned
+            public string Name { get; set; }
+            public string? Gender { get; set; }               // From TblGender
+            public string? Religion { get; set; }
+            public string? Phone { get; set; }
+            public string Email { get; set; }
+            public string? Role { get; set; }                 // From TblRole
+            public string? Qualification { get; set; }       // From TblQualification
+            public DateOnly? Dob { get; set; }
+            public DateTime? JoiningDate { get; set; }
+            public string? Unit { get; set; }                 // From TblUnit
+            public bool IsActive { get; set; }               // Default true
+            public bool IsDeleted { get; set; }              // Default false
+            public DateTime? CreatedOn { get; set; }
+            public DateTime? ModifiedOn { get; set; }
+            public string? CreatedBy { get; set; }           // HR/Manager name
+            public string? ModifiedBy { get; set; }          // HR/Manager name
+        }
+
+    }
+

@@ -1,0 +1,186 @@
+/* Reset and basic styling */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+body {
+  background: url('../assets/background.jpeg') no-repeat center center;
+  background-size: cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Container for side image + login box */
+.login-container {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 50px;
+  gap: 50px;
+}
+
+/* Left side image */
+.login-side-img {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-side-img img {
+  max-width: 80%;
+  height: auto;
+  object-fit: contain;
+  opacity: 0;
+  transform: translateY(-50px);
+  animation: slideFadeIn 1s forwards;
+}
+
+/* Welcome text below image */
+.welcome-text {
+  font-size: 28px;
+  color: #4a90e2;
+  margin-top: 15px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: textFadeIn 1s forwards 0.5s; /* delay after image */
+  text-align: center;
+}
+
+/* Right side login box */
+.login-box {
+  flex: 1;
+  max-width: 400px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  animation: slideFadeIn 1s ease-out forwards;
+}
+
+.login-box h2 {
+  margin-bottom: 30px;
+  color: #333;
+}
+
+/* Form input groups */
+.input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #555;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+/* Login button */
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #4a90e2;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.login-btn:hover {
+  background-color: #357ab7;
+}
+
+/* Signup link */
+.signup-link {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #555;
+  text-align: center;
+}
+
+.signup-link a {
+  color: #4a90e2;
+  text-decoration: none;
+}
+
+.signup-link a:hover {
+  text-decoration: underline;
+}
+
+input.valid {
+  border: 2px solid green;
+  transition: border 0.3s ease;
+}
+
+input.invalid {
+  border: 2px solid red;
+  transition: border 0.3s ease;
+}
+.error {
+  color: red;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+
+/* Animations */
+@keyframes slideFadeIn {
+  0% {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes textFadeIn {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive: hide image on small screens */
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+    padding: 20px;
+    gap: 20px;
+  }
+
+  .login-side-img {
+    display: none;
+  }
+
+  .login-box {
+    width: 90%;
+    max-width: none;
+    padding: 30px 20px;
+    border-radius: 10px;
+  }
+}

@@ -1,0 +1,6 @@
+@EAA_HostAddress = http://localhost:5236
+
+GET {{EAA_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
