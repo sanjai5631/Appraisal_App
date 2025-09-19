@@ -1,10 +1,11 @@
-// src/pages/appraisal/AppraisalCyclePage.jsx
+// src/pages/cycles/AppraisalCycleForm.jsx
 import React, { useEffect, useState, useMemo } from "react";
-import { Button, Card, Table, Form, Spinner } from "react-bootstrap";
+import { Button, Table, Form, Spinner } from "react-bootstrap";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import CardWrapper from "../../Component/CardWrapper";
 
 const cycleApiUrl = "https://localhost:7098/api/Cycle";
 const financialApiUrl = "https://localhost:7098/api/Financial";
@@ -89,104 +90,163 @@ const AppraisalCyclePage = () => {
   };
 
   return (
-    <div className="container mt-4">
-      <Card className="shadow">
-        <Card.Header className="d-flex justify-content-between align-items-center bg-secondary text-white">
-          <h4 className="mb-0">Appraisal Cycles</h4>
-          <Button variant="success" onClick={() => navigate("/add-cycle")}>
-            <FaPlus /> Add Cycle
-          </Button>
-        </Card.Header>
-
-        <Card.Body>
-          {/* Financial Year Dropdown */}
-          <div className="mb-3 d-flex align-items-center">
-            <Form.Label className="me-2 fw-bold">Financial Year:</Form.Label>
-            <Form.Select
-              style={{ width: "250px" }}
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-            >
-              <option value="">-- Select Year --</option>
-              {financialYears.map((fy) => (
-                <option
-                  key={fy.financialYearId ?? fy.financialyearid}
-                  value={fy.financialYearId ?? fy.financialyearid}
+    <div className="container-fluid mt-5">
+      <div className="row">
+        <div className="col-12">
+          <CardWrapper
+            variant="default"
+            hover={true}
+            loading={loading}
+            header={
+              <div className="d-flex justify-content-between align-items-center w-100">
+                <div>
+                  <h4 className="mb-0 text-dark">Appraisal Cycles</h4>
+                  <small className="text-muted">Total: {filteredCycles.length} Cycles</small>
+                </div>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-success btn-sm" onClick={() => navigate("/add-cycle")}>
+                    <FaPlus className="me-1" />
+                    Add Cycle
+                  </button>
+                </div>
+              </div>
+            }
+          >
+            {/* Financial Year Dropdown */}
+            <div className="mb-4">
+              <Form.Group className="d-flex align-items-center">
+                <Form.Label className="me-3 fw-semibold mb-0">Filter by Financial Year:</Form.Label>
+                <Form.Select
+                  style={{ width: "300px" }}
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
                 >
-                  {fy.yearName ?? fy.yearname}
-                </option>
-              ))}
-            </Form.Select>
-          </div>
-
-          {/* Cycles Table */}
-          {loading ? (
-            <div className="text-center my-5">
-              <Spinner animation="border" />
+                  <option value="">-- All Years --</option>
+                  {financialYears.map((fy) => (
+                    <option
+                      key={fy.financialYearId ?? fy.financialyearid}
+                      value={fy.financialYearId ?? fy.financialyearid}
+                    >
+                      {fy.yearName ?? fy.yearname}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
             </div>
-          ) : (
-            <Table striped bordered hover>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Cycle Name</th>
-                  <th>Financial Year</th>
-                  <th>Start Date</th>
-                  <th>End Date</th>
-                  <th>Status</th>
-                  <th className="text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCycles.length > 0 ? (
-                  filteredCycles.map((c) => {
-                    const year = financialYears.find(
-                      (fy) =>
-                        (fy.financialYearId ?? fy.financialyearid) ===
-                        (c.financialYearId ?? c.financialyearid)
-                    );
-                    return (
-                      <tr key={c.cycleId}>
-                        <td>{c.cycleId}</td>
-                        <td>{c.cycleName}</td>
-                        <td>{year ? year.yearName ?? year.yearname : "-"}</td>
-                        <td>{new Date(c.startDate).toLocaleDateString()}</td>
-                        <td>{new Date(c.endDate).toLocaleDateString()}</td>
-                        <td>{c.statusId === 1 ? "Active" : "Inactive"}</td>
-                        <td className="text-center">
-                          <Button
-                            size="sm"
-                            variant="warning"
-                            className="me-2"
-                            onClick={() =>
-                              navigate("/add-cycle", { state: { cycle: c } })
-                            }
-                          >
-                            <FaEdit />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={() => handleDelete(c.cycleId)}
-                          >
-                            <FaTrash />
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan="7" className="text-center">
-                      No cycles found for this financial year
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-          )}
-        </Card.Body>
-      </Card>
+
+            {/* Cycles Table */}
+            {filteredCycles.length === 0 ? (
+              <div className="text-center py-5">
+                <div className="mb-3">
+                  <i className="bi bi-calendar-event display-1 text-muted"></i>
+                </div>
+                <h5 className="text-muted">No Cycles Found</h5>
+                <p className="text-muted mb-4">
+                  {selectedYear
+                    ? "No appraisal cycles found for the selected financial year."
+                    : "Get started by adding your first appraisal cycle."
+                  }
+                </p>
+                <button className="btn btn-success" onClick={() => navigate("/add-cycle")}>
+                  <FaPlus className="me-2" />
+                  Add First Cycle
+                </button>
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table table-hover align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th scope="col" className="fw-semibold">
+                        <i className="bi bi-calendar-event me-1"></i>
+                        Cycle Name
+                      </th>
+                      <th scope="col" className="fw-semibold">
+                        <i className="bi bi-calendar-range me-1"></i>
+                        Financial Year
+                      </th>
+                      <th scope="col" className="fw-semibold">
+                        <i className="bi bi-calendar-check me-1"></i>
+                        Start Date
+                      </th>
+                      <th scope="col" className="fw-semibold">
+                        <i className="bi bi-calendar-x me-1"></i>
+                        End Date
+                      </th>
+                      <th scope="col" className="fw-semibold">
+                        <i className="bi bi-toggle-on me-1"></i>
+                        Status
+                      </th>
+                      <th scope="col" className="fw-semibold text-center">
+                        <i className="bi bi-gear me-1"></i>
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCycles.map((c) => {
+                      const year = financialYears.find(
+                        (fy) =>
+                          (fy.financialYearId ?? fy.financialyearid) ===
+                          (c.financialYearId ?? c.financialyearid)
+                      );
+                      return (
+                        <tr key={c.cycleId}>
+                          <td>
+                            <span className="fw-medium">{c.cycleName}</span>
+                          </td>
+                          <td>
+                            <span className="text-muted">
+                              {year ? year.yearName ?? year.yearname : "-"}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="text-muted">
+                              {new Date(c.startDate).toLocaleDateString()}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="text-muted">
+                              {new Date(c.endDate).toLocaleDateString()}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`badge ${c.statusId === 1 ? 'bg-success bg-opacity-10 text-success' : 'bg-secondary bg-opacity-10 text-secondary'}`}>
+                              {c.statusId === 1 ? "Active" : "Inactive"}
+                            </span>
+                          </td>
+                          <td className="text-center">
+                            <div className="d-flex gap-2 justify-content-center">
+                              <button
+                                className="btn btn-outline-warning btn-sm"
+                                onClick={() =>
+                                  navigate("/add-cycle", { state: { cycle: c } })
+                                }
+                                title="Edit Cycle"
+                              >
+                                <FaEdit className="me-1" />
+                                Edit
+                              </button>
+                              <button
+                                className="btn btn-outline-danger btn-sm"
+                                onClick={() => handleDelete(c.cycleId)}
+                                title="Delete Cycle"
+                              >
+                                <FaTrash className="me-1" />
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardWrapper>
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,10 +1,11 @@
-// src/pages/appraisal/AddCycle.jsx
+// src/pages/cycles/AddCycle.jsx
 import React, { useEffect, useState } from "react";
 import { Formik, Form, Field } from "formik";
-import { Button, Card, Row, Col } from "react-bootstrap";
+import { Button, Row, Col } from "react-bootstrap";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { useNavigate, useLocation } from "react-router-dom";
+import CardWrapper from "../../Component/CardWrapper";
 
 const createApiUrl = "https://localhost:7098/api/Cycle/CreateCycle";
 const updateApiUrl = "https://localhost:7098/api/Cycle/DeleteCycle?CycleId";
@@ -89,7 +90,7 @@ const AddCycle = () => {
       const errors = {};
       if (err.response?.data?.errors) {
         Object.keys(err.response.data.errors).forEach((key) => {
-          const cleanKey = key.replace("request.", "").replace("$.",""); // clean backend key
+          const cleanKey = key.replace("request.", "").replace("$.", ""); // clean backend key
           errors[cleanKey] = err.response.data.errors[key][0];
         });
       }
@@ -113,87 +114,136 @@ const AddCycle = () => {
   };
 
   return (
-    <div className="container mt-4">
-      <Card className="shadow">
-        <Card.Header className="bg-primary text-white">
-          <h4>{cycleData ? "Edit Cycle" : "Add Cycle"}</h4>
-        </Card.Header>
-        <Card.Body>
-          <Formik initialValues={initialValues} onSubmit={handleSubmit}>
-            {({ values, setFieldValue, handleChange, isSubmitting }) => (
-              <Form>
-                <Row className="mb-3">
-                  <Col md={6}>
-                    <label>Cycle *</label>
-                    <select
-                      className="form-select"
-                      onChange={(e) => handleCycleOptionChange(e.target.value, setFieldValue)}
+    <div className="container-fluid mt-5">
+      <div className="row">
+        <div className="col-12">
+          <CardWrapper
+            variant="default"
+            hover={true}
+            header={
+              <div className="d-flex align-items-center">
+                <i className="bi bi-calendar-plus-fill me-2"></i>
+                <h4 className="mb-0 text-dark">
+                  {cycleData ? "Update Cycle" : "Add Cycle"}
+                </h4>
+              </div>
+            }
+          >
+            <Formik initialValues={initialValues} onSubmit={handleSubmit}>
+              {({ values, setFieldValue, handleChange, isSubmitting }) => (
+                <Form>
+                  {/* Cycle Selection & Financial Year */}
+                  <Row className="mb-3">
+
+                    <Col md={4}>
+                      <label className="form-label fw-semibold">Financial Year *</label>
+                      <select
+                        className="form-select"
+                        name="financialyearid"
+                        value={values.financialyearid}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Select Financial Year --</option>
+                        {financialYears.map((fy) => (
+                          <option
+                            key={fy.financialYearId ?? fy.financialyearid}
+                            value={fy.financialYearId ?? fy.financialyearid}
+                          >
+                            {fy.yearName ?? fy.yearname}
+                          </option>
+                        ))}
+                      </select>
+                      {serverErrors.financialyearid && (
+                        <div className="text-danger small mt-1">{serverErrors.financialyearid}</div>
+                      )}
+                    </Col>
+
+                    <Col md={4}>
+                      <label className="form-label fw-semibold">Cycle Template *</label>
+                      <select
+                        className="form-select"
+                        onChange={(e) => handleCycleOptionChange(e.target.value, setFieldValue)}
+                      >
+                        <option value="">-- Select Cycle Template --</option>
+                        {cycleOptions.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                      {serverErrors.cycleName && (
+                        <div className="text-danger small mt-1">{serverErrors.cycleName}</div>
+                      )}
+                    </Col>
+
+                    <Col md={4}>
+                      <label className="form-label fw-semibold">Status</label>
+                      <select
+                        className="form-select"
+                        name="statusId"
+                        value={values.statusId}
+                        onChange={handleChange}
+                      >
+                        <option value={1}>Active</option>
+                        <option value={0}>Inactive</option>
+                      </select>
+                    </Col>
+                  </Row>
+
+                  {/* Start Date & End Date */}
+                  <Row className="mb-3">
+                    <Col md={4}>
+                      <label className="form-label fw-semibold">Publish Date *</label>
+                      <Field
+                        type="date"
+                        name="startDate"
+                        className="form-control"
+                      />
+                      {serverErrors.startDate && (
+                        <div className="text-danger small mt-1">{serverErrors.startDate}</div>
+                      )}
+                    </Col>
+
+                    <Col md={4}>
+                      <label className="form-label fw-semibold">Due Date *</label>
+                      <Field
+                        type="date"
+                        name="endDate"
+                        className="form-control"
+                      />
+                      {serverErrors.endDate && (
+                        <div className="text-danger small mt-1">{serverErrors.endDate}</div>
+                      )}
+                    </Col>
+                  </Row>
+
+                  {/* Action Buttons */}
+                  <div className="text-end mt-4">
+                    <Button
+                      type="button"
+                      variant="outline-secondary"
+                      className="me-3"
+                      onClick={() => navigate("/appraisal-cycles")}
                     >
-                      <option value="">-- Select Cycle --</option>
-                      {cycleOptions.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                    {serverErrors.cycleName && (
-                      <div className="text-danger">{serverErrors.cycleName}</div>
-                    )}
-                  </Col>
-
-                  <Col md={3}>
-                    <label>Publish Date *</label>
-                    <Field type="date" name="startDate" className="form-control" />
-                    {serverErrors.startDate && (
-                      <div className="text-danger">{serverErrors.startDate}</div>
-                    )}
-                  </Col>
-
-                  <Col md={3}>
-                    <label>Due Date *</label>
-                    <Field type="date" name="endDate" className="form-control" />
-                    {serverErrors.endDate && (
-                      <div className="text-danger">{serverErrors.endDate}</div>
-                    )}
-                  </Col>
-
-                  <Col md={6} className="mt-3">
-                    <label>Financial Year *</label>
-                    <select
-                      className="form-select"
-                      name="financialyearid"
-                      value={values.financialyearid}
-                      onChange={handleChange}
+                      <i className="bi bi-x-circle me-1"></i>
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant={cycleData ? "warning" : "success"}
+                      size="lg"
+                      disabled={isSubmitting}
                     >
-                      <option value="">-- Select Year --</option>
-                      {financialYears.map((fy) => (
-                        <option
-                          key={fy.financialYearId ?? fy.financialyearid}
-                          value={fy.financialYearId ?? fy.financialyearid}
-                        >
-                          {fy.yearName ?? fy.yearname}
-                        </option>
-                      ))}
-                    </select>
-                    {serverErrors.financialyearid && (
-                      <div className="text-danger">{serverErrors.financialyearid}</div>
-                    )}
-                  </Col>
-                </Row>
-
-                <div className="text-end mt-3">
-                  <Button type="submit" className="me-2" variant={cycleData ? "warning" : "success"} disabled={isSubmitting}>
-                    {cycleData ? "Update" : "Create"}
-                  </Button>
-                  <Button type="button" variant="secondary" onClick={() => navigate("/appraisal-cycles")}>
-                    Cancel
-                  </Button>
-                </div>
-              </Form>
-            )}
-          </Formik>
-        </Card.Body>
-      </Card>
+                      <i className="bi bi-check-circle me-2"></i>
+                      {cycleData ? "Update Cycle" : "Create Cycle"}
+                    </Button>
+                  </div>
+                </Form>
+              )}
+            </Formik>
+          </CardWrapper>
+        </div>
+      </div>
     </div>
   );
 };

@@ -48,15 +48,7 @@ function AppContent() {
 
         {/* HR employee management */}
         <Route
-          path="/add-employee"
-          element={
-            <RequireAuth allowedRoles={["hr"]}>
-              <AddEmployee />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/edit-employee/:employeeId"
+          path="/create-employee"
           element={
             <RequireAuth allowedRoles={["hr"]}>
               <AddEmployee />
