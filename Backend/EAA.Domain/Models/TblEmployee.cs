@@ -45,7 +45,11 @@ public partial class TblEmployee
 
     public int? ModifiedBy { get; set; }
 
+    public int? DeptId { get; set; }
+
     public virtual TblEmployee? CreatedByNavigation { get; set; }
+
+    public virtual TblDepartment? Dept { get; set; }
 
     public virtual TblGender? Gender { get; set; }
 

@@ -20,9 +20,12 @@ namespace EAA.Domain.DTO.Request.Cycle
         [DataType(DataType.Date)]
         public DateTime EndDate { get; set; }
 
+        // Optional: link cycle to a financial year
+        public int? Financialyearid { get; set; }
+
+        // Optional: status of the cycle
         public int? StatusId { get; set; }
 
-        [Required(ErrorMessage = "ModifiedBy is required.")]
         public int ModifiedBy { get; set; }
     }
 }

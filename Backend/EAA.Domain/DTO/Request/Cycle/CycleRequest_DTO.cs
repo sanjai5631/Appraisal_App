@@ -19,11 +19,12 @@ namespace EAA.Domain.DTO.Request.Cycle
 
         [Required(ErrorMessage = "End date is required.")]
         [DataType(DataType.Date)]
-        public DateTime EndDate { get; set; }     
+        public DateTime EndDate { get; set; }
+
+        public int? Financialyearid { get; set; }
 
         public int? StatusId { get; set; }
 
-        [Required(ErrorMessage = "CreatedBy is required.")]
         public int CreatedBy { get; set; }
 
         public int? ModifiedBy { get; set; }

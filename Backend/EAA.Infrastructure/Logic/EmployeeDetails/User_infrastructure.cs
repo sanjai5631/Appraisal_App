@@ -22,40 +22,40 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
             _error = error;
         }
 
-       
+
         // GET all employees
         public List<EmployeeResponse_DTO> GetAllEmployees()
         {
             try
             {
                 var employees = _context.TblEmployees
-                    .Where(e => e.IsDeleted == false)
+                     .Where(e => e.IsDeleted == false) 
                     .Include(e => e.Gender)
                     .Include(e => e.Role)
                     .Include(e => e.Qualification)
                     .Include(e => e.Unit)
                     .Include(e => e.CreatedByNavigation)
-                    .Include(e => e.ModifiedByNavigation).ToList()
+                    .Include(e => e.ModifiedByNavigation)
                     .Select(e => new EmployeeResponse_DTO
                     {
                         EmployeeId = e.EmployeeId,
                         EmpCode = e.EmpCode,
                         Name = e.Name,
-                        Gender = e.Gender?.GenderName,
+                        Gender = e.Gender != null ? e.Gender.GenderName : null,
                         Religion = e.Religion,
                         Phone = e.Phone,
                         Email = e.Email,
-                        Role = e.Role?.RoleName,
-                        Qualification = e.Qualification?.QualificationName,
+                        Role = e.Role != null ? e.Role.RoleName : null,
+                        Qualification = e.Qualification != null ? e.Qualification.QualificationName : null,
                         Dob = e.Dob,
                         JoiningDate = e.JoiningDate,
-                        Unit = e.Unit?.UnitName,
+                        Unit = e.Unit != null ? e.Unit.UnitName : null,
                         IsActive = e.IsActive ?? true,
                         IsDeleted = e.IsDeleted ?? false,
                         CreatedOn = e.CreatedOn,
                         ModifiedOn = e.ModifiedOn,
-                        CreatedBy = e.CreatedByNavigation?.Name,
-                        ModifiedBy = e.ModifiedByNavigation?.Name
+                        CreatedBy = e.CreatedByNavigation != null ? e.CreatedByNavigation.Name : null,
+                        ModifiedBy = e.ModifiedByNavigation != null ? e.ModifiedByNavigation.Name : null
                     })
                     .ToList();
 
@@ -67,6 +67,7 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
                 return new List<EmployeeResponse_DTO>();
             }
         }
+
 
         // GET employee by ID
         public EmployeeResponse_DTO GetEmployeeById(int employeeId)
@@ -125,17 +126,19 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
         {
             try
             {
-              
+                // 1️⃣ Get the creator (HR & Finance employee) from DB
                 var creator = _context.TblEmployees
                     .Include(e => e.Role)
                     .FirstOrDefault(e => e.EmployeeId == employeeRequest.CreatedBy);
 
-                if (creator == null || creator.Role?.RoleName != "Admin")
+                // 2️⃣ Check if creator exists and has HR & Finance role
+                if (creator == null || !string.Equals(creator.Role?.RoleName, "HR & Finance", StringComparison.OrdinalIgnoreCase))
                 {
-                    _error.Capture(new Exception("Unauthorized"), "Only Admin can add new employees");
+                    _error.Capture(new Exception("Unauthorized"), "Only HR & Finance can add new employees");
                     return null;
                 }
 
+                // 3️⃣ Create the new employee
                 var employee = new TblEmployee
                 {
                     EmpCode = employeeRequest.EmpCode,
@@ -152,6 +155,7 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
                         ? DateTime.SpecifyKind(employeeRequest.JoiningDate.Value, DateTimeKind.Unspecified)
                         : (DateTime?)null,
                     UnitId = employeeRequest.UnitId,
+                    DeptId = employeeRequest.DeptId,
                     IsActive = employeeRequest.IsActive ?? true,
                     IsDeleted = false,
                     CreatedOn = DateTime.Now,
@@ -161,15 +165,20 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
                 _context.TblEmployees.Add(employee);
                 _context.SaveChanges();
 
-               
+                // 4️⃣ Reload saved employee with related entities
                 var saved = _context.TblEmployees
                     .Include(e => e.Gender)
                     .Include(e => e.Role)
                     .Include(e => e.Qualification)
                     .Include(e => e.Unit)
+                    .Include(e => e.Dept)
                     .Include(e => e.CreatedByNavigation)
                     .FirstOrDefault(e => e.EmployeeId == employee.EmployeeId);
 
+                if (saved == null)
+                    return null; // Just in case
+
+                // 5️⃣ Map to response DTO
                 return new EmployeeResponse_DTO
                 {
                     EmployeeId = saved.EmployeeId,
@@ -184,6 +193,7 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
                     Dob = saved.Dob,
                     JoiningDate = saved.JoiningDate,
                     Unit = saved.Unit?.UnitName,
+                    Department = saved.Dept?.DeptName,
                     IsActive = saved.IsActive ?? true,
                     IsDeleted = saved.IsDeleted ?? false,
                     CreatedOn = saved.CreatedOn,
@@ -197,7 +207,7 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
             }
         }
 
-
+        //update
         public UpdateEmployeeResponse_DTO UpdateEmployee(int employeeId, UpdateEmployeeRequest_DTO updateRequest)
         {
             try
@@ -207,6 +217,7 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
                     .Include(e => e.Role)
                     .Include(e => e.Qualification)
                     .Include(e => e.Unit)
+                    .Include(e => e.Dept)
                     .Include(e => e.CreatedByNavigation)
                     .Include(e => e.ModifiedByNavigation)
                     .FirstOrDefault(e => e.EmployeeId == employeeId && e.IsDeleted == false);
@@ -217,43 +228,49 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
                     return null;
                 }
 
-               
+                // Check if modifier is HR
                 var modifier = _context.TblEmployees
                     .Include(m => m.Role)
                     .FirstOrDefault(m => m.EmployeeId == updateRequest.ModifiedBy);
 
-                if (modifier == null || modifier.Role?.RoleName != "HR")
+                if (modifier == null || modifier.Role?.RoleName != "HR & Finance")
                 {
                     _error.Capture(new Exception("Unauthorized"), "Only HR can modify employee records");
-                    return null; 
+                    return null;
                 }
 
-                
+                // Update scalar properties
                 employee.Name = updateRequest.Name ?? employee.Name;
-                employee.GenderId = updateRequest.Gender != null
-                    ? _context.TblGenders.FirstOrDefault(g => g.GenderName == updateRequest.Gender)?.GenderId
-                    : employee.GenderId;
                 employee.Religion = updateRequest.Religion ?? employee.Religion;
                 employee.Phone = updateRequest.Phone ?? employee.Phone;
                 employee.Email = updateRequest.Email ?? employee.Email;
-                employee.RoleId = updateRequest.Role != null
-                    ? _context.TblRoles.FirstOrDefault(r => r.RoleName == updateRequest.Role)?.RoleId
-                    : employee.RoleId;
-                employee.QualificationId = updateRequest.Qualification != null
-                    ? _context.TblQualifications.FirstOrDefault(q => q.QualificationName == updateRequest.Qualification)?.QualificationId
-                    : employee.QualificationId;
                 employee.Dob = updateRequest.Dob ?? employee.Dob;
                 employee.JoiningDate = updateRequest.JoiningDate ?? employee.JoiningDate;
-                employee.UnitId = updateRequest.Unit != null
-                    ? _context.TblUnits.FirstOrDefault(u => u.UnitName == updateRequest.Unit)?.UnitId
-                    : employee.UnitId;
                 employee.IsActive = updateRequest.IsActive ?? employee.IsActive;
+
+                // Update FKs directly from DTO
+                if (updateRequest.GenderId.HasValue)
+                    employee.GenderId = updateRequest.GenderId;
+
+                if (updateRequest.RoleId.HasValue)
+                    employee.RoleId = updateRequest.RoleId;
+
+                if (updateRequest.QualificationId.HasValue)
+                    employee.QualificationId = updateRequest.QualificationId;
+
+                if (updateRequest.UnitId.HasValue)
+                    employee.UnitId = updateRequest.UnitId;
+
+                if(updateRequest.DeptId.HasValue)
+                    employee.DeptId = updateRequest.DeptId;
+
+                // Audit fields
                 employee.ModifiedOn = DateTime.Now;
                 employee.ModifiedBy = updateRequest.ModifiedBy;
 
                 _context.SaveChanges();
 
-               
+                // Build response DTO
                 return new UpdateEmployeeResponse_DTO
                 {
                     EmployeeId = employee.EmployeeId,
@@ -268,6 +285,7 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
                     Dob = employee.Dob,
                     JoiningDate = employee.JoiningDate,
                     Unit = employee.Unit?.UnitName,
+                    Department=employee.Dept?.DeptName,
                     IsActive = employee.IsActive ?? true,
                     IsDeleted = employee.IsDeleted ?? false,
                     CreatedOn = employee.CreatedOn,

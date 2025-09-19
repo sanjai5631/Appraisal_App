@@ -35,6 +35,8 @@ public partial class DbAppraisalContext : DbContext
 
     public virtual DbSet<TblFeedback> TblFeedbacks { get; set; }
 
+    public virtual DbSet<TblFinancialyear> TblFinancialyears { get; set; }
+
     public virtual DbSet<TblGender> TblGenders { get; set; }
 
     public virtual DbSet<TblKpi> TblKpis { get; set; }
@@ -131,6 +133,7 @@ public partial class DbAppraisalContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("cycle_name");
             entity.Property(e => e.EndDate).HasColumnName("end_date");
+            entity.Property(e => e.Financialyearid).HasColumnName("financialyearid");
             entity.Property(e => e.ModifiedBy).HasColumnName("modified_by");
             entity.Property(e => e.ModifiedOn)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
@@ -145,6 +148,11 @@ public partial class DbAppraisalContext : DbContext
                 .HasForeignKey(d => d.CreatedBy)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("tbl_appraisal_cycles_created_by_fkey");
+
+            entity.HasOne(d => d.Financialyear).WithMany(p => p.TblAppraisalCycles)
+                .HasForeignKey(d => d.Financialyearid)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_financial_year");
 
             entity.HasOne(d => d.ModifiedByNavigation).WithMany(p => p.TblAppraisalCycleModifiedByNavigations)
                 .HasForeignKey(d => d.ModifiedBy)
@@ -412,6 +420,7 @@ public partial class DbAppraisalContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_on");
+            entity.Property(e => e.DeptId).HasColumnName("dept_id");
             entity.Property(e => e.Dob).HasColumnName("dob");
             entity.Property(e => e.Email)
                 .HasMaxLength(100)
@@ -457,6 +466,11 @@ public partial class DbAppraisalContext : DbContext
                 .HasForeignKey(d => d.CreatedBy)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("tbl_employees_created_by_fkey");
+
+            entity.HasOne(d => d.Dept).WithMany(p => p.TblEmployees)
+                .HasForeignKey(d => d.DeptId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_employees_department");
 
             entity.HasOne(d => d.Gender).WithMany(p => p.TblEmployees)
                 .HasForeignKey(d => d.GenderId)
@@ -533,6 +547,20 @@ public partial class DbAppraisalContext : DbContext
                 .HasForeignKey(d => d.ReviewerId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("tbl_feedback_reviewer_id_fkey");
+        });
+
+        modelBuilder.Entity<TblFinancialyear>(entity =>
+        {
+            entity.HasKey(e => e.Financialyearid).HasName("tbl_financialyear_pkey");
+
+            entity.ToTable("tbl_financialyear");
+
+            entity.Property(e => e.Financialyearid).HasColumnName("financialyearid");
+            entity.Property(e => e.Endyear).HasColumnName("endyear");
+            entity.Property(e => e.Startyear).HasColumnName("startyear");
+            entity.Property(e => e.Yearname)
+                .HasMaxLength(20)
+                .HasColumnName("yearname");
         });
 
         modelBuilder.Entity<TblGender>(entity =>

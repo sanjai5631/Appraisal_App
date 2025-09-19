@@ -13,8 +13,8 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace EAA.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     //[Authorize]
     public class EmployeeController : ControllerBase
     {

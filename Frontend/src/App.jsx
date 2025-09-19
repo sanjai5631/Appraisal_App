@@ -1,4 +1,4 @@
-import React from "react";
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -11,9 +11,14 @@ import RequireAuth from "./Component/RequireAuth";
 import Navbar from "./Component/Navbar";
 import Login from "./Component/Login";
 import HRDashboard from "./pages/HRDashboard";
-import ManagerDashboard from "./pages/AdminDashboard";
+import ManagerDashboard from "./pages/ManagerDashboard";
+import AddEmployee from "./pages/employee/AddEmployee";
+import ViewEmployees from "./pages/employee/ViewEmployees"; // <-- corrected import
 import EmployeePage from "./pages/EmployeePage";
 import "bootstrap/dist/css/bootstrap.min.css";
+import AppraisalCycleForm from "./pages/cycles/AppraisalCycleForm";
+import AddCycle from "./pages/cycles/AddCycle";
+import FinancialYearPage from "./pages/cycles/FinancialYear";
 
 function AppContent() {
   const { isLoggedIn, role } = useAuth();
@@ -26,10 +31,10 @@ function AppContent() {
   return (
     <>
       {isLoggedIn && !hideNavbar && <Navbar />}
+
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
-       
 
         {/* HR dashboard */}
         <Route
@@ -37,6 +42,57 @@ function AppContent() {
           element={
             <RequireAuth allowedRoles={["hr"]}>
               <HRDashboard />
+            </RequireAuth>
+          }
+        />
+
+        {/* HR employee management */}
+        <Route
+          path="/add-employee"
+          element={
+            <RequireAuth allowedRoles={["hr"]}>
+              <AddEmployee />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/edit-employee/:employeeId"
+          element={
+            <RequireAuth allowedRoles={["hr"]}>
+              <AddEmployee />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/view-employees"
+          element={
+            <RequireAuth allowedRoles={["hr"]}>
+              <ViewEmployees />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/appraisal-cycle"
+          element={
+            <RequireAuth allowedRoles={["hr"]}>
+              <AppraisalCycleForm />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/add-cycle"
+          element={
+            <RequireAuth allowedRoles={["hr"]}>
+              <AddCycle />
+            </RequireAuth>
+          } />
+
+        <Route
+          path="/financial-year"
+          element={
+            <RequireAuth allowedRoles={["hr"]}>
+              <FinancialYearPage />
             </RequireAuth>
           }
         />

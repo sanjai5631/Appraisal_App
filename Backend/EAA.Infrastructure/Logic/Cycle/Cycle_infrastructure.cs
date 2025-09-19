@@ -29,17 +29,20 @@ namespace EAA.Infrastructure.Logic.Cycle
                     .Include(c => c.CreatedByNavigation)
                     .Include(c => c.ModifiedByNavigation)
                     .Include(c => c.Status)
+                    .Include(c => c.Financialyear)
                     .Select(c => new CycleResponse_DTO
                     {
                         CycleId = c.CycleId,
                         CycleName = c.CycleName,
-                        StartDate = c.StartDate,
-                        EndDate = c.EndDate,
-                        Status = c.Status.StatusName,
+                        StartDate = c.StartDate.ToDateTime(TimeOnly.MinValue),
+                        EndDate = c.EndDate.ToDateTime(TimeOnly.MinValue),
+                        Status = c.Status != null ? c.Status.StatusName : null,
                         CreatedOn = c.CreatedOn,
                         ModifiedOn = c.ModifiedOn,
-                        CreatedBy = c.CreatedByNavigation.Name,
-                        ModifiedBy = c.ModifiedByNavigation.Name
+                        CreatedBy = c.CreatedByNavigation != null ? c.CreatedByNavigation.Name : null,
+                        ModifiedBy = c.ModifiedByNavigation != null ? c.ModifiedByNavigation.Name : null,
+                        FinancialYearId = c.Financialyearid,
+                        FinancialYearName = c.Financialyear != null ? c.Financialyear.Yearname : null
                     })
                     .ToList();
             }
@@ -50,6 +53,7 @@ namespace EAA.Infrastructure.Logic.Cycle
             }
         }
 
+
         // Get cycle by ID
         public CycleResponse_DTO GetCycleById(int cycleId)
         {
@@ -59,6 +63,7 @@ namespace EAA.Infrastructure.Logic.Cycle
                     .Include(c => c.CreatedByNavigation)
                     .Include(c => c.ModifiedByNavigation)
                     .Include(c => c.Status)
+                    .Include(c => c.Financialyear)
                     .FirstOrDefault(c => c.CycleId == cycleId);
 
                 if (cycle == null) return null;
@@ -67,13 +72,15 @@ namespace EAA.Infrastructure.Logic.Cycle
                 {
                     CycleId = cycle.CycleId,
                     CycleName = cycle.CycleName,
-                    StartDate = cycle.StartDate,
-                    EndDate = cycle.EndDate,
+                    StartDate = cycle.StartDate.ToDateTime(TimeOnly.MinValue),
+                    EndDate = cycle.EndDate.ToDateTime(TimeOnly.MinValue),
                     Status = cycle.Status?.StatusName,
                     CreatedOn = cycle.CreatedOn,
                     ModifiedOn = cycle.ModifiedOn,
                     CreatedBy = cycle.CreatedByNavigation?.Name,
-                    ModifiedBy = cycle.ModifiedByNavigation?.Name
+                    ModifiedBy = cycle.ModifiedByNavigation?.Name,
+                    FinancialYearId = cycle.Financialyearid,
+                    FinancialYearName = cycle.Financialyear?.Yearname
                 };
             }
             catch (Exception ex)
@@ -88,23 +95,24 @@ namespace EAA.Infrastructure.Logic.Cycle
         {
             try
             {
-                var hr = _context.TblEmployees
-                    .Include(e => e.Role)
-                    .FirstOrDefault(e => e.EmployeeId == request.CreatedBy);
+                //var hr = _context.TblEmployees
+                //    .Include(e => e.Role)
+                //    .FirstOrDefault(e => e.EmployeeId == request.CreatedBy);
 
-                if (hr == null || hr.Role?.RoleName != "HR")
-                {
-                    _error.Capture(new Exception("Unauthorized"), "Only HR can create cycles");
-                    return null;
-                }
+                //if (hr == null || hr.Role?.RoleName != "HR")
+                //{
+                //    _error.Capture(new Exception("Unauthorized"), "Only HR can create cycles");
+                //    return null;
+                //}
 
                 var cycle = new TblAppraisalCycle
                 {
                     CycleName = request.CycleName,
-                    StartDate = DateOnly.FromDateTime(request.StartDate),  
-                    EndDate = DateOnly.FromDateTime(request.EndDate),   
+                    StartDate = DateOnly.FromDateTime(request.StartDate),
+                    EndDate = DateOnly.FromDateTime(request.EndDate),
                     StatusId = request.StatusId,
-                    CreatedBy = request.CreatedBy,
+                    Financialyearid = request.Financialyearid,
+                    CreatedBy = 3,
                     CreatedOn = DateTime.Now
                 };
 
@@ -119,7 +127,6 @@ namespace EAA.Infrastructure.Logic.Cycle
                 return null;
             }
         }
-
 
         // Update cycle
         public UpdateCycleResponse_DTO UpdateCycle(int cycleId, UpdateCycleRequest_DTO request)
@@ -139,46 +146,43 @@ namespace EAA.Infrastructure.Logic.Cycle
                     return null;
                 }
 
-                // Apply updates safely
                 cycle.CycleName = !string.IsNullOrWhiteSpace(request.CycleName)
                     ? request.CycleName
                     : cycle.CycleName;
 
-                if (request.StartDate != default(DateTime))
+                if (request.StartDate != default)
                     cycle.StartDate = DateOnly.FromDateTime(request.StartDate);
 
-                if (request.EndDate != default(DateTime))
+                if (request.EndDate != default)
                     cycle.EndDate = DateOnly.FromDateTime(request.EndDate);
 
-
                 cycle.StatusId = request.StatusId ?? cycle.StatusId;
+                cycle.Financialyearid = request.Financialyearid ?? cycle.Financialyearid;
                 cycle.ModifiedBy = request.ModifiedBy;
                 cycle.ModifiedOn = DateTime.Now;
 
                 _context.SaveChanges();
 
-                // Map to response DTO
                 return new UpdateCycleResponse_DTO
                 {
                     CycleId = cycle.CycleId,
                     CycleName = cycle.CycleName,
-                    StartDate = cycle.StartDate,
-                    EndDate = cycle.EndDate,
+                    StartDate = cycle.StartDate.ToDateTime(TimeOnly.MinValue),
+                    EndDate = cycle.EndDate.ToDateTime(TimeOnly.MinValue),
                     StatusId = cycle.StatusId,
                     ModifiedBy = cycle.ModifiedBy ?? 0,
                     ModifiedOn = cycle.ModifiedOn ?? DateTime.Now,
+                    FinancialYearId = cycle.Financialyearid,
+                    FinancialYearName = cycle.Financialyear?.Yearname,
                     Message = "Cycle updated successfully."
                 };
             }
             catch (Exception ex)
             {
-                _error.Capture(ex, "Error in Cycle_infrastructure -> UpdateCycle");
+                _error.Capture(ex, $"Error in Cycle_infrastructure -> UpdateCycle({cycleId})");
                 return null;
             }
         }
-
-
-
 
         // Delete cycle
         public string DeleteCycle(int cycleId)
@@ -195,7 +199,7 @@ namespace EAA.Infrastructure.Logic.Cycle
             }
             catch (Exception ex)
             {
-                _error.Capture(ex, "Error in Cycle_infrastructure -> DeleteCycle");
+                _error.Capture(ex, $"Error in Cycle_infrastructure -> DeleteCycle({cycleId})");
                 return $"Error deleting cycle: {ex.Message}";
             }
         }

@@ -46,6 +46,9 @@ namespace EAA.Domain.DTO.Request.User
 
         public int? UnitId { get; set; }
 
+        [Required(ErrorMessage = "Department is required.")]
+        public int? DeptId { get; set; }   // Department assignment
+
         public bool? IsActive { get; set; } = true;
 
         [Required(ErrorMessage = "CreatedBy (HR EmployeeId) is required.")]

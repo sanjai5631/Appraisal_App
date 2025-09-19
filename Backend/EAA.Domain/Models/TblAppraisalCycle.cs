@@ -23,7 +23,11 @@ public partial class TblAppraisalCycle
 
     public int? ModifiedBy { get; set; }
 
+    public int? Financialyearid { get; set; }
+
     public virtual TblEmployee? CreatedByNavigation { get; set; }
+
+    public virtual TblFinancialyear? Financialyear { get; set; }
 
     public virtual TblEmployee? ModifiedByNavigation { get; set; }
 
@@ -36,5 +40,4 @@ public partial class TblAppraisalCycle
     public virtual ICollection<TblAssignedForm> TblAssignedForms { get; set; } = new List<TblAssignedForm>();
 
     public virtual ICollection<TblFeedback> TblFeedbacks { get; set; } = new List<TblFeedback>();
-    public bool IsDeleted { get; set; }
 }

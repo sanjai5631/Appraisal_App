@@ -18,4 +18,6 @@ public partial class TblDepartment
     public int? ModifiedBy { get; set; }
 
     public virtual ICollection<TblAppraisalTemplate> TblAppraisalTemplates { get; set; } = new List<TblAppraisalTemplate>();
+
+    public virtual ICollection<TblEmployee> TblEmployees { get; set; } = new List<TblEmployee>();
 }

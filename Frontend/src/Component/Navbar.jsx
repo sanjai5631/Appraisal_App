@@ -13,15 +13,20 @@ function Navbar() {
   };
 
   return (
-    <BSNavbar bg="dark" variant="dark" expand="lg" fixed="top">
+    <BSNavbar bg="dark" variant="dark" expand="lg">
       <Container>
         <BSNavbar.Brand as={NavLink} to="/home">Employee Portal</BSNavbar.Brand>
         <BSNavbar.Toggle aria-controls="navbar-nav" />
         <BSNavbar.Collapse id="navbar-nav">
           <Nav className="me-auto">
             {role === "hr" && <Nav.Link as={NavLink} to="/dashboard/hr">HR Dashboard</Nav.Link>}
+            {role === "hr" && <Nav.Link as={NavLink} to="/view-employees">Employees</Nav.Link>}
+            {role === "hr" && <Nav.Link as={NavLink} to="/appraisal-cycle">Appraisal Cycle</Nav.Link>}
+            {role === "hr" && <Nav.Link as={NavLink} to="/financial-year">Financial Year</Nav.Link>}
+            {role === "hr" && <Nav.Link as={NavLink} to="/view-Reports">Reports</Nav.Link>}
             {role === "manager" && <Nav.Link as={NavLink} to="/dashboard/manager">Manager Dashboard</Nav.Link>}
             {role === "employee" && <Nav.Link as={NavLink} to="/employee">Self Appraisal</Nav.Link>}
+            {role === "employee" && <Nav.Link as={NavLink} to="/employee">View Reports</Nav.Link>}
           </Nav>
           <Nav>
             <NavDropdown title="Account" align="end">
