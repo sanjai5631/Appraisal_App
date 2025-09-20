@@ -44,6 +44,7 @@ namespace EAA.Controllers
                 var claims = new[]
                 {
                     new Claim("EmployeeId", employee.EmployeeId.ToString()),
+                    new Claim("DeptId", employee.DeptId?.ToString() ?? "0"),
                     new Claim(ClaimTypes.Name, employee.Name),
                     new Claim("EmpCode", employee.EmpCode),
                     new Claim(ClaimTypes.Role, employee.Role?.RoleName ?? "Employee")
@@ -66,7 +67,9 @@ namespace EAA.Controllers
                     Token = new JwtSecurityTokenHandler().WriteToken(token),
                     Name = employee.Name,
                     Email = employee.Email,
-                    EmpCode = employee.EmpCode
+                    EmpCode = employee.EmpCode,
+                    EmployeeId = employee.EmployeeId,
+                    DeptId = employee.DeptId
                 };
 
                 return Ok(response);

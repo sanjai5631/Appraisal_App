@@ -1,9 +1,8 @@
 ﻿using EAA.Application;
-using EAA.Domain.DTO.Request.Employee;
+using EAA.Domain.DTO.Request.Appraisal;
 using EAA.Domain.DTO.Response.Appraisal;
 using EAA.Infrastructure.Logic.Appraisal;
 using System;
-using System.Collections.Generic;
 
 namespace EAA.Services.Services.Appraisal
 {
@@ -18,9 +17,10 @@ namespace EAA.Services.Services.Appraisal
             _error = error;
         }
 
-        public ApiResponse<AppraisalFormResponse_DTO> GetCurrentForm(int employeeId, int cycleId)
+        // Fetch current appraisal form
+        public ApiResponse<AppraisalResponseDTO> GetCurrentForm(int employeeId, int cycleId)
         {
-            var response = new ApiResponse<AppraisalFormResponse_DTO>();
+            var response = new ApiResponse<AppraisalResponseDTO>();
             try
             {
                 var form = _appraisalInfra.GetCurrentForm(employeeId, cycleId);
@@ -37,38 +37,40 @@ namespace EAA.Services.Services.Appraisal
             return response;
         }
 
-        public ApiResponse<bool> SubmitSelfAppraisal(SelfAppraisalRequest_DTO request)
+        // Submit self-appraisal or new appraisal
+        public ApiResponse<bool> SubmitAppraisal(AppraisalDTO request)
         {
             var response = new ApiResponse<bool>();
             try
             {
-                var result = _appraisalInfra.SubmitSelfAppraisal(request);
+                var result = _appraisalInfra.SubmitAppraisal(request);
                 response.Data = result;
                 response.StatusCode = result ? 200 : 400;
                 response.Message = result ? "Self-appraisal submitted successfully" : "Failed to submit self-appraisal";
             }
             catch (Exception ex)
             {
-                _error.Capture(ex, "Appraisal_Services -> SubmitSelfAppraisal");
+                _error.Capture(ex, "Appraisal_Services -> SubmitAppraisal");
                 response.StatusCode = 500;
                 response.Message = "Error submitting self-appraisal";
             }
             return response;
         }
 
-        public ApiResponse<bool> SubmitManagerAppraisal(AppraisalRequest_DTO request, int managerId)
+        // Submit manager review
+        public ApiResponse<bool> SubmitManagerReview(AppraisalDTO request, int managerId)
         {
             var response = new ApiResponse<bool>();
             try
             {
-                var result = _appraisalInfra.SubmitManagerAppraisal(request, managerId);
+                var result = _appraisalInfra.SubmitManagerReview(request, managerId);
                 response.Data = result;
                 response.StatusCode = result ? 200 : 400;
                 response.Message = result ? "Manager appraisal submitted successfully" : "Failed to submit manager appraisal";
             }
             catch (Exception ex)
             {
-                _error.Capture(ex, "Appraisal_Services -> SubmitManagerAppraisal");
+                _error.Capture(ex, "Appraisal_Services -> SubmitManagerReview");
                 response.StatusCode = 500;
                 response.Message = "Error submitting manager appraisal";
             }

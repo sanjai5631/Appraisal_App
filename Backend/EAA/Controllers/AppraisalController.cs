@@ -1,9 +1,10 @@
 ﻿using EAA.Application;
-using EAA.Domain.DTO.Request.Employee;
+using EAA.Domain.DTO.Request.Appraisal;
 using EAA.Domain.DTO.Response.Appraisal;
 using EAA.Services.Services.Appraisal;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Security.Claims;
 
 namespace EAA.Controllers
 {
@@ -20,76 +21,102 @@ namespace EAA.Controllers
             _error = error;
         }
 
-        // GET-GetCurrentForm
-        [HttpGet]
-        [Route("GetCurrentForm")]
+        // GET: api/Appraisal/GetCurrentForm?employeeId=1&cycleId=1
+        [HttpGet("GetCurrentForm")]
         public IActionResult GetCurrentForm(int employeeId, int cycleId)
         {
-            var response = new ApiResponse<AppraisalFormResponse_DTO>();
             try
             {
-                response = _appraisalService.GetCurrentForm(employeeId, cycleId);
+                var response = _appraisalService.GetCurrentForm(employeeId, cycleId);
+
                 if (response.Data == null)
                 {
-                    response.StatusCode = 404;
-                    response.Message = "Appraisal form not found.";
+                    return NotFound(new ApiResponse<AppraisalResponseDTO>
+                    {
+                        StatusCode = 404,
+                        Message = "Appraisal form not found.",
+                        Data = null
+                    });
                 }
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
                 _error.Capture(ex, "AppraisalController -> GetCurrentForm");
-                response.StatusCode = 500;
-                response.Message = "Failed to fetch appraisal form.";
+                return StatusCode(500, new ApiResponse<AppraisalResponseDTO>
+                {
+                    StatusCode = 500,
+                    Message = "Failed to fetch appraisal form.",
+                    Data = null
+                });
             }
-            return StatusCode(response.StatusCode, response);
         }
 
-        // POST-SubmitSelfAppraisal
-        [HttpPost]
-        [Route("SubmitSelfAppraisal")]
-        public IActionResult SubmitSelfAppraisal([FromBody] SelfAppraisalRequest_DTO request)
+        // POST: api/Appraisal/SubmitSelfAppraisal
+        [HttpPost("SubmitSelfAppraisal")]
+        public IActionResult SubmitAppraisal([FromBody] AppraisalDTO request)
         {
-            var response = new ApiResponse<bool>();
             try
             {
-                response = _appraisalService.SubmitSelfAppraisal(request);
+                var createdBy = User.FindFirstValue("EmployeeId");
+                request.CreatedBy = Convert.ToInt32(createdBy);
+                var response = _appraisalService.SubmitAppraisal(request);
+
                 if (!response.Data)
                 {
-                    response.StatusCode = 400;
-                    response.Message = "Failed to submit self-appraisal.";
+                    return BadRequest(new ApiResponse<bool>
+                    {
+                        StatusCode = 400,
+                        Message = "Failed to submit self-appraisal.",
+                        Data = false
+                    });
                 }
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
                 _error.Capture(ex, "AppraisalController -> SubmitSelfAppraisal");
-                response.StatusCode = 500;
-                response.Message = "Error occurred while submitting self-appraisal.";
+                return StatusCode(500, new ApiResponse<bool>
+                {
+                    StatusCode = 500,
+                    Message = "Error occurred while submitting self-appraisal.",
+                    Data = false
+                });
             }
-            return StatusCode(response.StatusCode, response);
         }
 
-        // POST-SubmitManagerAppraisal
-        [HttpPost]
-        [Route("SubmitManagerAppraisal")]
-        public IActionResult SubmitManagerAppraisal([FromBody] AppraisalRequest_DTO request, [FromQuery] int managerId)
+        // POST: api/Appraisal/SubmitManagerAppraisal?managerId=5
+        [HttpPost("SubmitManagerAppraisal")]
+        public IActionResult SubmitManagerReview([FromBody] AppraisalDTO request, [FromQuery] int managerId)
         {
-            var response = new ApiResponse<bool>();
             try
             {
-                response = _appraisalService.SubmitManagerAppraisal(request, managerId);
+                var response = _appraisalService.SubmitManagerReview(request, managerId);
+
                 if (!response.Data)
                 {
-                    response.StatusCode = 400;
-                    response.Message = "Failed to submit manager appraisal.";
+                    return BadRequest(new ApiResponse<bool>
+                    {
+                        StatusCode = 400,
+                        Message = "Failed to submit manager appraisal.",
+                        Data = false
+                    });
                 }
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
                 _error.Capture(ex, "AppraisalController -> SubmitManagerAppraisal");
-                response.StatusCode = 500;
-                response.Message = "Error occurred while submitting manager appraisal.";
+                return StatusCode(500, new ApiResponse<bool>
+                {
+                    StatusCode = 500,
+                    Message = "Error occurred while submitting manager appraisal.",
+                    Data = false
+                });
             }
-            return StatusCode(response.StatusCode, response);
         }
     }
 }

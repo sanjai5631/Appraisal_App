@@ -1,134 +1,80 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import CardWrapper from "../../Component/CardWrapper";
+import axios from "axios";
 
 const SelfAppraisalForm = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const appraisalData = location.state?.appraisalData;
+    const { appraisalData, empId } = location.state;
     const [userRole] = useState(localStorage.getItem("role") || "employee"); // Get user role from localStorage
 
-    // Job Proficiency Data Array
-    const [jobProficiencyData, setJobProficiencyData] = useState([
-        {
-            id: 1,
-            proficiency: "Technical Skills and Knowledge",
-            description: "Demonstrates proficiency in relevant technical skills, tools, and technologies. Shows ability to apply knowledge effectively in projects and problem-solving scenarios.",
-            weightage: 25,
-            agileScore: 0,
-            supervisorScore: 0,
-            associateComment: "",
-            supervisorComment: ""
-        },
-        {
-            id: 2,
-            proficiency: "Communication and Collaboration",
-            description: "Effectively communicates ideas, collaborates with team members, and maintains positive working relationships. Demonstrates clear written and verbal communication skills.",
-            weightage: 20,
-            agileScore: 0,
-            supervisorScore: 0,
-            associateComment: "",
-            supervisorComment: ""
-        },
-        {
-            id: 3,
-            proficiency: "Problem Solving and Decision Making",
-            description: "Analyzes problems systematically, identifies root causes, and develops effective solutions. Makes sound decisions based on available information and business context.",
-            weightage: 20,
-            agileScore: 0,
-            supervisorScore: 0,
-            associateComment: "",
-            supervisorComment: ""
-        },
-        {
-            id: 4,
-            proficiency: "Project Management and Delivery",
-            description: "Manages time effectively, meets deadlines, and delivers quality work. Demonstrates ability to plan, organize, and execute tasks within project constraints.",
-            weightage: 15,
-            agileScore: 0,
-            supervisorScore: 0,
-            associateComment: "",
-            supervisorComment: ""
-        },
-        {
-            id: 5,
-            proficiency: "Learning and Development",
-            description: "Shows commitment to continuous learning, adapts to new technologies and methodologies, and seeks opportunities for professional growth and skill enhancement.",
-            weightage: 10,
-            agileScore: 0,
-            supervisorScore: 0,
-            associateComment: "",
-            supervisorComment: ""
-        },
-        {
-            id: 6,
-            proficiency: "Leadership and Team Building",
-            description: "Demonstrates leadership qualities, mentors others, contributes to team success, and takes initiative in driving positive change within the organization.",
-            weightage: 10,
-            agileScore: 0,
-            supervisorScore: 0,
-            associateComment: "",
-            supervisorComment: ""
+    // KPI data from API
+    const [formdata, setFormData] = useState([]);
+    const [templateId, setTemplateId] = useState(appraisalData?.templateId || null);
+
+    // Fetch form by DepartmentId
+    const fetchform = async () => {
+        try {
+            const departmentId = localStorage.getItem("deptId") || 0;
+            if (!departmentId) return;
+
+            const res = await axios.get(
+                `https://localhost:7098/api/AppraisalForm/GetTemplateByDeptId?departmentId=${departmentId}&employeeId=${empId}&cycleId=${appraisalData.cycleId}`,
+                { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+            );
+
+            if (res.data?.data) {
+                const kpis = Array.isArray(res.data.data.kpis) ? res.data.data.kpis : [];
+                setFormData(kpis);
+                // Set templateId if not already from appraisalData
+                if (!templateId && res.data.data.templateId) {
+                    setTemplateId(res.data.data.templateId);
+                }
+            } else setFormData([]);
+        } catch (error) {
+            console.error("Error fetching template:", error);
+            setFormData([]);
         }
-    ]);
+    };
+
+    useEffect(() => { fetchform(); }, []);
 
     const [totalScore, setTotalScore] = useState(0);
     const [totalWeightage, setTotalWeightage] = useState(0);
 
-    useEffect(() => {
-        calculateTotalScore();
-    }, [jobProficiencyData]);
+    useEffect(() => { calculateTotalScore(); }, [formdata]);
 
     const calculateTotalScore = () => {
-        const totalWeightedScore = jobProficiencyData.reduce((sum, item) => {
-            return sum + (item.agileScore * item.weightage);
-        }, 0);
-
-        const totalWeight = jobProficiencyData.reduce((sum, item) => {
-            return sum + item.weightage;
-        }, 0);
-
+        const totalWeightedScore = formdata.reduce((sum, item) => sum + ((item.agileScore / 10) * item.kpiWeightage), 0);
+        const totalWeight = formdata.reduce((sum, item) => sum + item.kpiWeightage, 0);
         setTotalWeightage(totalWeight);
         setTotalScore(totalWeightedScore);
     };
 
-    const handleAgileScoreChange = (id, score) => {
+    const handleAgileScoreChange = (kpiId, score) => {
         const numericScore = parseFloat(score) || 0;
         if (numericScore >= 0 && numericScore <= 5) {
-            const updatedData = jobProficiencyData.map(item =>
-                item.id === id ? { ...item, agileScore: numericScore } : item
-            );
-            setJobProficiencyData(updatedData);
+            setFormData(formdata.map(item => item.kpiId === kpiId ? { ...item, agileScore: numericScore } : item));
         }
     };
 
-    const handleSupervisorScoreChange = (id, score) => {
+    const handleSupervisorScoreChange = (kpiId, score) => {
         const numericScore = parseFloat(score) || 0;
         if (numericScore >= 0 && numericScore <= 5) {
-            const updatedData = jobProficiencyData.map(item =>
-                item.id === id ? { ...item, supervisorScore: numericScore } : item
-            );
-            setJobProficiencyData(updatedData);
+            setFormData(formdata.map(item => item.kpiId === kpiId ? { ...item, supervisorScore: numericScore } : item));
         }
     };
 
-    const handleAssociateCommentChange = (id, comment) => {
-        const updatedData = jobProficiencyData.map(item =>
-            item.id === id ? { ...item, associateComment: comment } : item
-        );
-        setJobProficiencyData(updatedData);
+    const handleAssociateCommentChange = (kpiId, comment) => {
+        setFormData(formdata.map(item => item.kpiId === kpiId ? { ...item, associateComment: comment } : item));
     };
 
-    const handleSupervisorCommentChange = (id, comment) => {
-        const updatedData = jobProficiencyData.map(item =>
-            item.id === id ? { ...item, supervisorComment: comment } : item
-        );
-        setJobProficiencyData(updatedData);
+    const handleSupervisorCommentChange = (kpiId, comment) => {
+        setFormData(formdata.map(item => item.kpiId === kpiId ? { ...item, supervisorComment: comment } : item));
     };
 
-    const getScorePercentage = () => {
-        return totalWeightage > 0 ? ((totalScore / totalWeightage) * 100).toFixed(2) : 0;
-    };
+    const getScorePercentage = () => totalWeightage > 0 ? ((totalScore / totalWeightage) * 100).toFixed(2) : 0;
 
     const getScoreGrade = (percentage) => {
         if (percentage >= 90) return { grade: "A+", color: "success" };
@@ -139,18 +85,51 @@ const SelfAppraisalForm = () => {
         return { grade: "D", color: "danger" };
     };
 
-    const handleSubmit = () => {
-        // Here you would typically save the data to your backend
-        console.log("Appraisal Data:", {
-            appraisalInfo: appraisalData,
-            jobProficiencyData,
-            totalScore,
-            totalWeightage,
-            scorePercentage: getScorePercentage()
-        });
+    const handleSubmit = async (isFinal = false) => {
+        try {
+            const employeeId = appraisalData?.employeeId || parseInt(localStorage.getItem("employeeId"));
+            const cycleId = appraisalData?.cycleId;
+            if (!employeeId || !cycleId) {
+                alert("Employee or cycle data is missing.");
+                return;
+            }
 
-        // Navigate back or show success message
-        navigate("/self-appraisal-list");
+            const kpiResponses = formdata.map(item => ({
+                kpiId: item.kpiId,
+                selfScore: item.agileScore || 0,
+                supervisorScore: item.supervisorScore || 0,
+                associateComment: item.associateComment ?? "",
+                supervisorComment: item.supervisorComment ?? ""
+            }));
+
+            const payload = {
+                employeeId,
+                cycleId,
+                templateId: templateId,
+                overallSelfScore: totalScore.toFixed(2),
+                overallSupervisorScore: formdata.reduce((sum, i) => sum + (i.supervisorScore || 0), 0).toFixed(2),
+                finalRating: "",
+                status: "Submitted",
+                createdBy: parseInt(localStorage.getItem("employeeId")),
+                kpiResponses
+            };
+
+            const res = await axios.post(
+                "https://localhost:7098/api/Appraisal/SubmitSelfAppraisal",
+                payload,
+                { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+            );
+
+            if (res.data?.statusCode === 200) {
+                alert("Appraisal submitted successfully!");
+                navigate("/self-appraisal-list");
+            } else {
+                alert("Failed to submit appraisal: " + res.data?.message);
+            }
+        } catch (error) {
+            console.error("Error submitting appraisal:", error.response?.data || error);
+            alert(error.response?.data?.message || "Something went wrong while submitting appraisal.");
+        }
     };
 
     const scoreGrade = getScoreGrade(getScorePercentage());
@@ -171,19 +150,11 @@ const SelfAppraisalForm = () => {
                                     </small>
                                 </div>
                                 <div className="d-flex gap-2">
-                                    <button
-                                        className="btn btn-outline-secondary btn-sm"
-                                        onClick={() => navigate("/self-appraisal-list")}
-                                    >
-                                        <i className="bi bi-arrow-left me-1"></i>
-                                        Back to List
+                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate("/self-appraisal-list")}>
+                                        <i className="bi bi-arrow-left me-1"></i> Back to List
                                     </button>
-                                    <button
-                                        className="btn btn-success btn-sm"
-                                        onClick={handleSubmit}
-                                    >
-                                        <i className="bi bi-check-circle me-1"></i>
-                                        Submit Appraisal
+                                    <button className="btn btn-success btn-sm" onClick={handleSubmit}>
+                                        <i className="bi bi-check-circle me-1"></i> Submit Appraisal
                                     </button>
                                 </div>
                             </div>
@@ -207,58 +178,26 @@ const SelfAppraisalForm = () => {
                             <table className="table table-bordered table-hover">
                                 <thead className="table-primary">
                                     <tr>
-                                        <th scope="col" className="fw-semibold" style={{ width: '5%' }}>
-                                            <i className="bi bi-hash me-1"></i>
-                                            #
-                                        </th>
-                                        <th scope="col" className="fw-semibold" style={{ width: '20%' }}>
-                                            <i className="bi bi-list-ul me-1"></i>
-                                            Job Proficiency
-                                        </th>
-                                        <th scope="col" className="fw-semibold" style={{ width: '25%' }}>
-                                            <i className="bi bi-file-text me-1"></i>
-                                            Description
-                                        </th>
-                                        <th scope="col" className="fw-semibold text-center" style={{ width: '8%' }}>
-                                            <i className="bi bi-percent me-1"></i>
-                                            Weightage
-                                        </th>
-                                        <th scope="col" className="fw-semibold text-center" style={{ width: '10%' }}>
-                                            <i className="bi bi-star me-1"></i>
-                                            Agile Score (0-5)
-                                        </th>
-                                        <th scope="col" className="fw-semibold text-center" style={{ width: '10%' }}>
-                                            <i className="bi bi-person-check me-1"></i>
-                                            Supervisor Score (0-5)
-                                        </th>
-                                        <th scope="col" className="fw-semibold" style={{ width: '11%' }}>
-                                            <i className="bi bi-chat-left-text me-1"></i>
-                                            Associate Comment
-                                        </th>
-                                        <th scope="col" className="fw-semibold" style={{ width: '11%' }}>
-                                            <i className="bi bi-person-check me-1"></i>
-                                            Supervisor Comment
-                                        </th>
+                                        <th>#</th>
+                                        <th>Job Proficiency</th>
+                                        <th>Description</th>
+                                        <th className="text-center">Weightage</th>
+                                        <th className="text-center">Agile Score (0-5)</th>
+                                        <th className="text-center">Supervisor Score (0-5)</th>
+                                        <th>Associate Comment</th>
+                                        <th>Supervisor Comment</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {jobProficiencyData.map((item, index) => (
-                                        <tr key={item.id}>
+                                    {formdata.map((item, index) => (
+                                        <tr key={index}>
                                             <td className="text-center">
-                                                <span className="badge bg-primary bg-opacity-10 text-primary">
-                                                    {item.id}
-                                                </span>
+                                                <span className="badge bg-primary bg-opacity-10 text-primary">{item.kpiId}</span>
                                             </td>
-                                            <td>
-                                                <span className="fw-medium">{item.proficiency}</span>
-                                            </td>
-                                            <td>
-                                                <small className="text-muted">{item.description}</small>
-                                            </td>
+                                            <td><span className="fw-medium">{item.kpiTitle}</span></td>
+                                            <td><small className="text-muted">{item.kpiDescription}</small></td>
                                             <td className="text-center">
-                                                <span className="badge bg-info bg-opacity-10 text-info">
-                                                    {item.weightage}%
-                                                </span>
+                                                <span className="badge bg-info bg-opacity-10 text-info">{item.kpiWeightage}%</span>
                                             </td>
                                             <td className="text-center">
                                                 <input
@@ -268,7 +207,7 @@ const SelfAppraisalForm = () => {
                                                     max="5"
                                                     step="0.01"
                                                     value={item.agileScore}
-                                                    onChange={(e) => handleAgileScoreChange(item.id, e.target.value)}
+                                                    onChange={(e) => handleAgileScoreChange(item.kpiId, e.target.value)}
                                                     placeholder="0.00"
                                                 />
                                             </td>
@@ -280,7 +219,7 @@ const SelfAppraisalForm = () => {
                                                     max="5"
                                                     step="0.01"
                                                     value={item.supervisorScore}
-                                                    onChange={(e) => handleSupervisorScoreChange(item.id, e.target.value)}
+                                                    onChange={(e) => handleSupervisorScoreChange(item.kpiId, e.target.value)}
                                                     placeholder="0.00"
                                                     disabled={userRole !== "supervisor" && userRole !== "manager"}
                                                 />
@@ -290,8 +229,8 @@ const SelfAppraisalForm = () => {
                                                     className="form-control form-control-sm"
                                                     rows="2"
                                                     placeholder="Enter your comment..."
-                                                    value={item.associateComment}
-                                                    onChange={(e) => handleAssociateCommentChange(item.id, e.target.value)}
+                                                    value={item.associateComment ?? ""}
+                                                    onChange={(e) => handleAssociateCommentChange(item.kpiId, e.target.value)}
                                                 />
                                             </td>
                                             <td>
@@ -299,8 +238,8 @@ const SelfAppraisalForm = () => {
                                                     className="form-control form-control-sm"
                                                     rows="2"
                                                     placeholder="Supervisor comment..."
-                                                    value={item.supervisorComment}
-                                                    onChange={(e) => handleSupervisorCommentChange(item.id, e.target.value)}
+                                                    value={item.supervisorComment ?? ""}
+                                                    onChange={(e) => handleSupervisorCommentChange(item.kpiId, e.target.value)}
                                                     disabled={userRole !== "supervisor" && userRole !== "manager"}
                                                 />
                                             </td>
@@ -309,26 +248,20 @@ const SelfAppraisalForm = () => {
                                 </tbody>
                                 <tfoot className="table-secondary">
                                     <tr>
-                                        <td className="text-center fw-bold">
-                                            <i className="bi bi-calculator"></i>
-                                        </td>
-                                        <td className="fw-bold">
-                                            <strong>TOTALS</strong>
-                                        </td>
+                                        <td className="text-center fw-bold"><i className="bi bi-calculator"></i></td>
+                                        <td className="fw-bold">TOTALS</td>
                                         <td></td>
                                         <td className="text-center fw-bold">
-                                            <span className="badge bg-secondary bg-opacity-10 text-secondary">
-                                                {totalWeightage}%
-                                            </span>
+                                            <span className="badge bg-secondary bg-opacity-10 text-secondary">{totalWeightage}%</span>
                                         </td>
                                         <td className="text-center fw-bold">
                                             <span className="badge bg-success bg-opacity-10 text-success">
-                                                {jobProficiencyData.reduce((sum, item) => sum + item.agileScore, 0).toFixed(2)}
+                                                {formdata.reduce((sum, item) => sum + item.agileScore, 0).toFixed(2)}
                                             </span>
                                         </td>
                                         <td className="text-center fw-bold">
                                             <span className="badge bg-primary bg-opacity-10 text-primary">
-                                                {jobProficiencyData.reduce((sum, item) => sum + item.supervisorScore, 0).toFixed(2)}
+                                                {formdata.reduce((sum, item) => sum + item.supervisorScore, 0).toFixed(2)}
                                             </span>
                                         </td>
                                         <td></td>
@@ -343,10 +276,7 @@ const SelfAppraisalForm = () => {
                             <div className="col-md-6">
                                 <div className="card">
                                     <div className="card-header bg-light">
-                                        <h6 className="mb-0">
-                                            <i className="bi bi-chat-square-text me-2"></i>
-                                            Overall Associate Comments
-                                        </h6>
+                                        <h6 className="mb-0"><i className="bi bi-chat-square-text me-2"></i>Overall Associate Comments</h6>
                                     </div>
                                     <div className="card-body">
                                         <textarea
@@ -360,10 +290,7 @@ const SelfAppraisalForm = () => {
                             <div className="col-md-6">
                                 <div className="card">
                                     <div className="card-header bg-light">
-                                        <h6 className="mb-0">
-                                            <i className="bi bi-person-check me-2"></i>
-                                            Overall Supervisor Comments
-                                        </h6>
+                                        <h6 className="mb-0"><i className="bi bi-person-check me-2"></i>Overall Supervisor Comments</h6>
                                     </div>
                                     <div className="card-body">
                                         <textarea

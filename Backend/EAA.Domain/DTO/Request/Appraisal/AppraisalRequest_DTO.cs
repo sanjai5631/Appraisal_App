@@ -2,55 +2,46 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace EAA.Domain.DTO.Request.Employee
+namespace EAA.Domain.DTO.Request.Appraisal
 {
-    // Individual KPI response for self-appraisal
-    public class SelfKPIRequestDTO
+    public class KPIRequestDTO
     {
         [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "KPI Id must be greater than 0")]
         public int KpiId { get; set; }
 
-        [Required]
-        [Range(0, 100, ErrorMessage = "Score must be between 0 and 100")]
-        public decimal Score { get; set; }
+        [Range(0, 5, ErrorMessage = "Score must be between 0 and 5")]
+        public decimal SelfScore { get; set; }           
 
-        [MaxLength(500, ErrorMessage = "Comments cannot exceed 500 characters")]
-        public string Comments { get; set; } = string.Empty;
+        [Range(0, 5, ErrorMessage = "Score must be between 0 and 5")]
+        public decimal SupervisorScore { get; set; }    
+
+        public string? AssociateComment { get; set; }    
+        public string? SupervisorComment { get; set; }   
     }
 
-    // Request to submit self-appraisal
-    public class SelfAppraisalRequest_DTO
+    public class AppraisalDTO
     {
+        public int? AppraisalId { get; set; }         
+
         [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "EmployeeId must be greater than 0")]
         public int EmployeeId { get; set; }
 
         [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "CycleId must be greater than 0")]
         public int CycleId { get; set; }
 
-        [Required]
-        [MinLength(1, ErrorMessage = "At least one KPI response is required")]
-        public List<SelfKPIRequestDTO> KPIResponses { get; set; } = new List<SelfKPIRequestDTO>();
-    }
-
-    // Optional: For manager/HR submission
-    public class AppraisalRequest_DTO
-    {
-        [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "EmployeeId must be greater than 0")]
-        public int EmployeeId { get; set; }
+        public int? TemplateId { get; set; }
 
         [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "CycleId must be greater than 0")]
-        public int CycleId { get; set; }
+        public List<KPIRequestDTO> KPIResponses { get; set; } = new List<KPIRequestDTO>();
 
-        [Required]
-        [MinLength(1, ErrorMessage = "At least one KPI response is required")]
-        public List<SelfKPIRequestDTO> KPIResponses { get; set; } = new List<SelfKPIRequestDTO>();
+        public decimal? OverallSelfScore { get; set; }
+        public decimal? OverallSupervisorScore { get; set; }
+        public string? FinalRating { get; set; }
+        public string? Status { get; set; }              
 
-        [MaxLength(50, ErrorMessage = "Status cannot exceed 50 characters")]
-        public string? Status { get; set; }   // "Submitted", "Reviewed", etc.
+        public DateTime? CreatedOn { get; set; }
+        public DateTime? ModifiedOn { get; set; }
+        public int? CreatedBy { get; set; }
+        public int? ModifiedBy { get; set; }
     }
 }

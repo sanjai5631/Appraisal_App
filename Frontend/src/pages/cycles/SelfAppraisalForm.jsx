@@ -33,7 +33,7 @@ const SelfAppraisalForm = ({ employeeId }) => {
     const fetchForm = async () => {
       try {
         const res = await axios.get(
-          `https://localhost:7098/api/Appraisal/GetCurrentForm?employeeId=${employeeId}&cycleId=${selectedCycleId}`,
+          `https://localhost:7098/api/SelfAppraisal/GetAllSelfAppraisal`,
           { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
         );
         setKpis(res.data.data?.kpiResponses || []);

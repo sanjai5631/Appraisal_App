@@ -1,41 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CardWrapper from "../../Component/CardWrapper";
-
-const selfAppraisalData = [
-    {
-        id: 1,
-        financialYear: "2023-2024",
-        cycle: "Mid-Year",
-        startDate: "2023-10-01",
-        dueDate: "2023-10-31",
-        status: "Start",
-    },
-    {
-        id: 2,
-        financialYear: "2023-2024",
-        cycle: "Year-End",
-        startDate: "2024-03-01",
-        dueDate: "2024-03-31",
-        status: "In Progress",
-    },
-    {
-        id: 3,
-        financialYear: "2022-2023",
-        cycle: "Year-End",
-        startDate: "2023-03-01",
-        dueDate: "2023-03-31",
-        status: "Supervisor Reviewed",
-    },
-    {
-        id: 4,
-        financialYear: "2021-2022",
-        cycle: "Year-End",
-        startDate: "2022-03-01",
-        dueDate: "2022-03-31",
-        status: "Completed",
-    },
-];
+import axios from "axios";
 
 const statusBadge = (status) => {
     switch (status) {
@@ -54,13 +20,38 @@ const statusBadge = (status) => {
 
 function SelfAppraisalList() {
     const navigate = useNavigate();
+    const [appraisalList, setAppraisalList] = useState([]);
 
-    const handleAction = (item) => {
-        if (item.status === "Start") {
-            navigate("/self-appraisal-form", { state: { appraisalData: item } });
-        } else {
-            navigate("/self-appraisal-view", { state: { appraisalData: item } });
+    // Fetch self-appraisal cycles for logged-in employee
+    const fetchAppraisal = async () => {
+        try {
+            // get employeeId from JWT/localStorage
+            const employeeId = localStorage.getItem("employeeId");
+
+            const res = await axios.get(
+                `https://localhost:7098/api/SelfAppraisal/GetAllSelfAppraisal?employeeId=${employeeId}`,
+                { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+            );
+
+            if (res.data?.data) {
+                setAppraisalList(res.data.data);
+            } else {
+                setAppraisalList([]);
+            }
+        } catch (error) {
+            console.error("Error fetching appraisal list:", error);
+            setAppraisalList([]);
         }
+    };
+
+    useEffect(() => {
+        fetchAppraisal();
+    }, []);
+
+    // Navigate depending on status
+    const handleAction = (item) => {
+        const empId =localStorage.getItem("employeeId");
+        navigate("/self-appraisal-form", { state: { appraisalData: item,empId:empId } });
     };
 
     return (
@@ -74,7 +65,7 @@ function SelfAppraisalList() {
                             <div className="d-flex justify-content-between align-items-center w-100">
                                 <div>
                                     <h4 className="mb-0 text-dark">Self Appraisal Cycles</h4>
-                                    <small className="text-muted">Total: {selfAppraisalData.length} Cycles</small>
+                                    <small className="text-muted">Total: {appraisalList.length} Cycles</small>
                                 </div>
                             </div>
                         }
@@ -83,73 +74,38 @@ function SelfAppraisalList() {
                             <table className="table table-hover align-middle">
                                 <thead className="table-light">
                                     <tr>
-                                        <th scope="col" className="fw-semibold">
-                                            <i className="bi bi-calendar-range me-1"></i>
-                                            Financial Year
-                                        </th>
-                                        <th scope="col" className="fw-semibold">
-                                            <i className="bi bi-calendar-event me-1"></i>
-                                            Cycle
-                                        </th>
-                                        <th scope="col" className="fw-semibold">
-                                            <i className="bi bi-calendar-check me-1"></i>
-                                            Start Date
-                                        </th>
-                                        <th scope="col" className="fw-semibold">
-                                            <i className="bi bi-calendar-x me-1"></i>
-                                            Due Date
-                                        </th>
-                                        <th scope="col" className="fw-semibold">
-                                            <i className="bi bi-toggle-on me-1"></i>
-                                            Status
-                                        </th>
-                                        <th scope="col" className="fw-semibold text-center">
-                                            <i className="bi bi-gear me-1"></i>
-                                            Actions
-                                        </th>
+                                        <th>Financial Year</th>
+                                        <th>Cycle</th>
+                                        <th>Start Date</th>
+                                        <th>Due Date</th>
+                                        <th>Status</th>
+                                        <th className="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {selfAppraisalData.length === 0 ? (
+                                    {appraisalList.length === 0 ? (
                                         <tr>
                                             <td colSpan={6} className="text-center py-4">
                                                 No self appraisal cycles found.
                                             </td>
                                         </tr>
                                     ) : (
-                                        selfAppraisalData.map((item) => (
-                                            <tr key={item.id}>
+                                        appraisalList.map((item, index) => (
+                                            <tr key={index}>
                                                 <td>
                                                     <span className="badge bg-primary bg-opacity-10 text-primary">
-                                                        {item.financialYear}
+                                                        {item.financialYearName}
                                                     </span>
                                                 </td>
-                                                <td>
-                                                    <span className="fw-medium">{item.cycle}</span>
-                                                </td>
-                                                <td>
-                                                    <span className="text-muted">
-                                                        {new Date(item.startDate).toLocaleDateString()}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span className="text-muted">
-                                                        {new Date(item.dueDate).toLocaleDateString()}
-                                                    </span>
-                                                </td>
+                                                <td>{item.cycleName}</td>
+                                                <td>{new Date(item.publishDate).toLocaleDateString()}</td>
+                                                <td>{new Date(item.dueDate).toLocaleDateString()}</td>
                                                 <td>{statusBadge(item.status)}</td>
                                                 <td className="text-center">
                                                     <button
-                                                        className={`btn btn-sm ${item.status === "Start"
-                                                            ? "btn-success"
-                                                            : "btn-outline-primary"
+                                                        className={`btn btn-sm ${item.status === "Start" ? "btn-success" : "btn-outline-primary"
                                                             }`}
                                                         onClick={() => handleAction(item)}
-                                                        title={
-                                                            item.status === "Start"
-                                                                ? "Fill Appraisal Form"
-                                                                : "View Appraisal"
-                                                        }
                                                     >
                                                         {item.status === "Start" ? (
                                                             <>

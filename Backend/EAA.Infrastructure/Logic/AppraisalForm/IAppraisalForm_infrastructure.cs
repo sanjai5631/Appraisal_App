@@ -12,6 +12,7 @@ namespace EAA.Infrastructure.Logic.AppraisalForm
     {
         List<TemplateResponse_DTO> GetAllTemplates();
         TemplateResponse_DTO GetTemplateById(int templateId);
+        TemplateResponse_DTO GetByDeptId(int departmentId, int employeeId, int cycleId);
         TemplateResponse_DTO SaveTemplate(TemplateRequest_DTO request);
         UpdateTemplateResponse_DTO UpdateTemplate(int templateId, UpdateTemplateRequest_DTO request);
         string DeleteTemplate(int templateId);

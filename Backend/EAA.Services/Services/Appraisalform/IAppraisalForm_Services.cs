@@ -14,6 +14,7 @@ namespace EAA.Services.Services.AppraisalForm
         ApiResponse<List<TemplateResponse_DTO>> GetAllTemplates();
         ApiResponse<TemplateResponse_DTO> GetTemplateById(int templateId);
         ApiResponse<TemplateResponse_DTO> SaveTemplate(TemplateRequest_DTO request);
+        ApiResponse <TemplateResponse_DTO> GetByDeptId(int departmentId, int employeeId, int cycleId);
         ApiResponse<UpdateTemplateResponse_DTO> UpdateTemplate(int templateId, UpdateTemplateRequest_DTO request);
         ApiResponse<string> DeleteTemplate(int templateId);
     }

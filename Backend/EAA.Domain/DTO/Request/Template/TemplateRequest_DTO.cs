@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace EAA.Domain.DTO.Request.Template
+﻿namespace EAA.Domain.DTO.Request.Template
 {
     public class TemplateRequest_DTO
     {
@@ -16,8 +10,14 @@ namespace EAA.Domain.DTO.Request.Template
 
     public class TemplateKpiRequest_DTO
     {
-        public int KpiId { get; set; }
+        public int? KpiId { get; set; } 
+        public string KpiTitle { get; set; } = null!;
+        public string KpiDescription { get; set; } = null!;
         public decimal Weightage { get; set; }
+        public int AgileScore { get; set; }
+        public int SupervisorScore { get; set; }
+        public string? AssociateComment { get; set; }
+        public string? SupervisorComment { get; set; }
     }
 
     public class UpdateTemplateRequest_DTO : TemplateRequest_DTO

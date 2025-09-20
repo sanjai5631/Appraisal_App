@@ -27,7 +27,9 @@ function Login() {
         localStorage.setItem("name", res.data.name);
         localStorage.setItem("email", res.data.email);
         localStorage.setItem("empCode", res.data.empCode);
-        localStorage.setItem("role", res.data.role); // API should return role
+        localStorage.setItem("role", res.data.role);
+        localStorage.setItem("deptId",res.data.deptId);
+        localStorage.setItem("employeeId",res.data.employeeId)
 
         // Update AuthContext
         login();

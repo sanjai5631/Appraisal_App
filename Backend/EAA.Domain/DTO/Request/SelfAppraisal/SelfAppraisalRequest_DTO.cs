@@ -9,6 +9,9 @@ namespace EAA.Domain.DTO.Request.SelfAppraisal
     public class SelfAppraisalRequest_DTO
     {
         public int? FinancialYearId { get; set; }  // Link to financial year
+        public string FinancialYearName { get; set; }
+
+        public int AppraisalId { get; set; }
         public int CycleId { get; set; }
         public string CycleName { get; set; }      // Name of the appraisal cycle
         public DateTime PublishDate { get; set; }  // Start date of the cycle

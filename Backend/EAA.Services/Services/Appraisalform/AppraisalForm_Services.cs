@@ -158,5 +158,35 @@ namespace EAA.Services.Services.AppraisalForm
             }
             return response;
         }
+
+        public ApiResponse<TemplateResponse_DTO> GetByDeptId(int departmentId, int employeeId, int cycleId)
+        {
+            var response = new ApiResponse<TemplateResponse_DTO>();
+            try
+            {
+                var template = _appraisalForm.GetByDeptId(departmentId,employeeId,cycleId); 
+
+                if (template == null)
+                {
+                    response.StatusCode = 404;
+                    response.Message = "No template found for the given department";
+                }
+                else
+                {
+                    response.StatusCode = 200;
+                    response.Message = "Template retrieved successfully";
+                    response.Data = template;
+                }
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, "Error in AppraisalForm_Services -> GetByDeptId");
+                response.StatusCode = 500;
+                response.Message = "Failed to retrieve template";
+            }
+
+            return response;
+        }
+
     }
 }

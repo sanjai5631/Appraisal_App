@@ -3,42 +3,32 @@ using System.Collections.Generic;
 
 namespace EAA.Domain.DTO.Response.Appraisal
 {
-    // Individual KPI response for an appraisal
-    public class AppraisalKPIResponse_DTO
+    public class KpiResponseDTO
     {
         public int KpiId { get; set; }
-
-        // Self-assessment
-        public decimal? SelfScore { get; set; }
-        public string? SelfComments { get; set; }
-
-        // Manager/HR assessment
-        public decimal? ManagerScore { get; set; }
-        public string? ManagerComments { get; set; }
+        public decimal SelfScore { get; set; }
+        public decimal SupervisorScore { get; set; }
+        public string? AssociateComment { get; set; }
+        public string? SupervisorComment { get; set; }
     }
 
-    // Appraisal form returned to frontend
-    public class AppraisalFormResponse_DTO
+    public class AppraisalResponseDTO
     {
+        public int AppraisalId { get; set; }
         public int EmployeeId { get; set; }
         public int CycleId { get; set; }
+        public int? TemplateId { get; set; }
 
-        // KPI details
-        public List<AppraisalKPIResponse_DTO> KpiResponses { get; set; } = new List<AppraisalKPIResponse_DTO>();
+        public List<KpiResponseDTO> KPIResponses { get; set; } = new List<KpiResponseDTO>();
 
-        // Status: Not Started, Submitted, Reviewed, Completed
-        public string Status { get; set; } = "Not Started";
-
-        // Optional overall scores
         public decimal? OverallSelfScore { get; set; }
         public decimal? OverallSupervisorScore { get; set; }
         public string? FinalRating { get; set; }
-    }
+        public string? Status { get; set; }
 
-    // Response for actions like submit, update, etc.
-    public class AppraisalActionResponse_DTO
-    {
-        public bool Success { get; set; }
-        public string? Message { get; set; }
+        public DateTime? CreatedOn { get; set; }
+        public DateTime? ModifiedOn { get; set; }
+        public int? CreatedBy { get; set; }
+        public int? ModifiedBy { get; set; }
     }
 }

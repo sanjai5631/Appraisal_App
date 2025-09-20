@@ -41,7 +41,7 @@ namespace EAA.Infrastructure.Logic.AppraisalForm
                             KpiId = tk.KpiId ?? 0,
                             KpiTitle = tk.Kpi.Title,
                             KpiDescription = tk.Kpi.Description,
-                            KpiWeightage = tk.Weightage
+                            KpiWeightage = tk.Weightage??0
                         }).ToList()
                     })
                     .ToList();
@@ -76,7 +76,7 @@ namespace EAA.Infrastructure.Logic.AppraisalForm
                         KpiId = tk.KpiId ?? 0,
                         KpiTitle = tk.Kpi.Title,
                         KpiDescription = tk.Kpi.Description,
-                        KpiWeightage = tk.Weightage
+                        KpiWeightage = tk.Weightage??0
                     }).ToList()
                 };
             }
@@ -101,7 +101,8 @@ namespace EAA.Infrastructure.Logic.AppraisalForm
                     TblTemplateKpis = request.Kpis.Select(k => new TblTemplateKpi
                     {
                         KpiId = k.KpiId,
-                        Weightage = k.Weightage
+                        Weightage = k.Weightage,
+
                     }).ToList()
                 };
 
@@ -155,7 +156,7 @@ namespace EAA.Infrastructure.Logic.AppraisalForm
                         KpiId = tk.KpiId ?? 0,
                         KpiTitle = tk.Kpi.Title,
                         KpiDescription = tk.Kpi.Description,
-                        KpiWeightage = tk.Weightage
+                        KpiWeightage = tk.Weightage??0
                     }).ToList()
                 };
             }
@@ -188,6 +189,64 @@ namespace EAA.Infrastructure.Logic.AppraisalForm
                 return $"Error deleting template: {ex.Message}";
             }
         }
+
+        public TemplateResponse_DTO GetByDeptId(int departmentId, int employeeId, int cycleId)
+        {
+            try
+            {
+                // Get template by department
+                var template = _context.TblAppraisalTemplates
+                    .Include(t => t.Department)
+                    .Include(t => t.TblTemplateKpis)
+                        .ThenInclude(tk => tk.Kpi)
+                    .FirstOrDefault(t => t.DepartmentId == departmentId);
+
+                if (template == null)
+                    return null;
+
+                // Get appraisal for this employee + cycle + template
+                var appraisal = _context.TblAppraisals
+                    .Include(a => a.TblAppraisalResponses)
+                    .FirstOrDefault(a => a.EmployeeId == employeeId
+                                         && a.CycleId == cycleId
+                                         && a.TemplateId == template.TemplateId);
+
+                var kpiResponses = template.TblTemplateKpis.Select(tk =>
+                {
+                    var response = appraisal?.TblAppraisalResponses
+                                           .FirstOrDefault(r => r.KpiId == tk.KpiId);
+
+                    return new TemplateKpiResponse_DTO
+                    {
+                        KpiId = tk.KpiId ?? 0,
+                        KpiTitle = tk.Kpi?.Title ?? "",
+                        KpiDescription = tk.Kpi?.Description ?? "",
+                        KpiWeightage = tk.Weightage ?? 0,
+                        AgileScore = (int)(response?.SelfScore ?? 0),
+                        SupervisorScore = (int)(response?.SupervisorScore ?? 0m),
+                        AssociateComment = response?.AssociateComment ?? "",
+                        SupervisorComment = response?.SupervisorComment ?? ""
+                    };
+                }).ToList();
+
+                return new TemplateResponse_DTO
+                {
+                    TemplateId = template.TemplateId,
+                    TemplateName = template.TemplateName,
+                    TemplateDescription = template.Description,
+                    DepartmentName = template.Department?.DeptName ?? "",
+                    Kpis = kpiResponses
+                };
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, $"Error in AppraisalTemplate_Infrastructure -> GetTemplateWithEmployeeScores({departmentId}, {employeeId}, {cycleId})");
+                return null;
+            }
+        }
+
+
     }
 }
+
 

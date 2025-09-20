@@ -21,13 +21,13 @@ namespace EAA.Services.Services.SelfAppraisal
         }
 
         // Get all self-appraisal cycles
-        public ApiResponse<List<SelfAppraisalResponse_DTO>> GetAllSelfAppraisal()
+        public ApiResponse<List<SelfAppraisalResponse_DTO>> GetAllSelfAppraisal(int employeeId)
         {
             var response = new ApiResponse<List<SelfAppraisalResponse_DTO>>();
 
             try
             {
-                var data = _selfAppraisal.GetAllSelfAppraisal();
+                var data = _selfAppraisal.GetAllSelfAppraisal(employeeId);
 
                 if (data == null || !data.Any())
                 {

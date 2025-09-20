@@ -139,5 +139,30 @@ namespace EAA.Controllers
             }
             return StatusCode(response.StatusCode, response);
         }
+
+        // GET: api/AppraisalForm/GetTemplateByDeptId
+        [HttpGet]
+        [Route("GetTemplateByDeptId")]
+        public IActionResult GetTemplateByDeptId(int departmentId, int employeeId, int cycleId)
+        {
+            var response = new ApiResponse<TemplateResponse_DTO>();
+            try
+            {
+                response = _appraisalFormService.GetByDeptId(departmentId, employeeId, cycleId);
+                if (response.Data == null)
+                {
+                    response.StatusCode = 404;
+                    response.Message = "No template found for the given department.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, "AppraisalFormController -> GetTemplateByDeptId");
+                response.StatusCode = 500;
+                response.Message = "Failed to retrieve template.";
+            }
+            return StatusCode(response.StatusCode, response);
+        }
+
     }
 }

@@ -22,12 +22,12 @@ namespace EAA.Controllers
 
         // GET: api/SelfAppraisal/GetAllSelfAppraisal
         [HttpGet("GetAllSelfAppraisal")]
-        public IActionResult GetAllSelfAppraisal()
+        public IActionResult GetAllSelfAppraisal(int employeeId)
         {
             var response = new ApiResponse<List<SelfAppraisalResponse_DTO>>();
             try
             {
-                response = _selfAppraisalService.GetAllSelfAppraisal();
+                response = _selfAppraisalService.GetAllSelfAppraisal(employeeId);
 
                 if (response.Data == null || response.Data.Count == 0)
                 {
