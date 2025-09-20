@@ -9,13 +9,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace EAA.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize]
+    [Authorize]
     public class EmployeeController : ControllerBase
     {
        
@@ -69,6 +70,8 @@ namespace EAA.Controllers
         {
             try
             {
+                var createdBy = User.FindFirstValue("EmployeeId");
+                employeeRequest.CreatedBy = Convert.ToInt32(createdBy);
                 employeeRequest.Password = PasswordHasher.HashPassword(employeeRequest.Password);
                 return Ok(_user.SaveEmployee(employeeRequest));
             }
@@ -86,6 +89,8 @@ namespace EAA.Controllers
         {
             try
             {
+                var modifiedBy = User.FindFirstValue("EmployeeId");
+                updateRequest.ModifiedBy = Convert.ToInt32(modifiedBy);
                 return Ok(_user.UpdateEmployee(employeeId, updateRequest));
             }
             catch (Exception ex)

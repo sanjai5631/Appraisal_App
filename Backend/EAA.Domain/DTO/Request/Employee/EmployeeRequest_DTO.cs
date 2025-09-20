@@ -51,7 +51,6 @@ namespace EAA.Domain.DTO.Request.User
 
         public bool? IsActive { get; set; } = true;
 
-        [Required(ErrorMessage = "CreatedBy (HR EmployeeId) is required.")]
         public int CreatedBy { get; set; }   // HR EmployeeId
     }
 }

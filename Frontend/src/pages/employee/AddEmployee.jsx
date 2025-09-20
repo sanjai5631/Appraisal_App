@@ -32,7 +32,8 @@ const AddEmployee = () => {
     },
     enableReinitialize: true,
     validationSchema: Yup.object({
-      empCode: Yup.string().max(20).required("Employee Code is required"),
+      empCode: Yup.string().max(20).min(3, "Minimum 3 characters required")
+        .max(20, "Maximum 20 characters allowed").required("Employee Code is required"),
       name: Yup.string().max(100).required("Employee name is required"),
       genderId: Yup.string().required("Gender is required"),
       email: Yup.string().email().required("Email address is required"),
@@ -41,10 +42,10 @@ const AddEmployee = () => {
         : Yup.string().min(6).max(50).required("Password is required"),
       roleId: Yup.string().required("Role is required"),
       unitId: Yup.string().required("Unit is required"),
-      departmentId: Yup.string().required("Department is required"),
-      createdBy: Yup.string().required("EmployeeId is required"),
+      departmentId: Yup.string().required("Department is required")
     }),
     onSubmit: async (values, { resetForm }) => {
+      debugger
       try {
         // build payload
         const payload = {
@@ -61,7 +62,7 @@ const AddEmployee = () => {
           Dob: values.dob || null,
           JoiningDate: values.joiningDate || null,
           UnitId: parseInt(values.unitId),
-          DepartmentId: values.departmentId ? parseInt(values.departmentId) : null,
+          DeptId: values.departmentId ? parseInt(values.departmentId) : null,
           IsActive: values.isActive,
         };
 
@@ -72,7 +73,6 @@ const AddEmployee = () => {
 
         // set audit fields
         if (employeeId) {
-          payload.ModifiedBy = parseInt(values.createdBy);
           // update
           await axios.put(
             `https://localhost:7098/api/Employee/UpdateEmployeeDetails?employeeId=${employeeId}`,
@@ -83,7 +83,6 @@ const AddEmployee = () => {
           );
           Swal.fire("Updated", "Employee updated successfully!", "success");
         } else {
-          payload.CreatedBy = parseInt(values.createdBy);
           // save
           await axios.post(
             "https://localhost:7098/api/Employee/SaveEmployeeDetails",
@@ -144,7 +143,7 @@ const AddEmployee = () => {
                       value={formik.values.empCode}
                       onChange={formik.handleChange}
                       isInvalid={!!formik.errors.empCode && formik.touched.empCode}
-                    />
+                      maxLength={10} />
                     <Form.Control.Feedback type="invalid">
                       {formik.errors.empCode}
                     </Form.Control.Feedback>
