@@ -19,6 +19,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import AppraisalCycleForm from "./pages/cycles/AppraisalCycleForm";
 import AddCycle from "./pages/cycles/AddCycle";
 import FinancialYearPage from "./pages/cycles/FinancialYear";
+import SelfAppraisalList from "./pages/selfAppraisal/selfAppraisalList";
+import SelfAppraisalForm from "./pages/selfAppraisal/SelfAppraisalForm";
 
 function AppContent() {
   const { isLoggedIn, role } = useAuth();
@@ -89,6 +91,9 @@ function AppContent() {
           }
         />
 
+
+
+
         {/* Manager dashboard */}
         <Route
           path="/dashboard/manager"
@@ -100,6 +105,26 @@ function AppContent() {
         />
 
         {/* Employee page */}
+
+        <Route
+          path="/self-appraisal-list"
+          element={
+            <RequireAuth allowedRoles={["employee"]}>
+              <SelfAppraisalList />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/self-appraisal-form"
+          element={
+            <RequireAuth allowedRoles={["employee"]}>
+              <SelfAppraisalForm />
+            </RequireAuth>
+          }
+        />
+
+
         <Route
           path="/employee"
           element={
@@ -119,7 +144,7 @@ function AppContent() {
               ) : role === "manager" ? (
                 <Navigate to="/dashboard/manager" replace />
               ) : (
-                <Navigate to="/employee" replace />
+                <Navigate to="/self-appraisal-list" replace />
               )
             ) : (
               <Navigate to="/login" replace />

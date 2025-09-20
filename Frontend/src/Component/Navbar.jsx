@@ -25,7 +25,7 @@ function Navbar() {
             {role === "hr" && <Nav.Link as={NavLink} to="/financial-year">Financial Year</Nav.Link>}
             {role === "hr" && <Nav.Link as={NavLink} to="/view-Reports">Reports</Nav.Link>}
             {role === "manager" && <Nav.Link as={NavLink} to="/dashboard/manager">Manager Dashboard</Nav.Link>}
-            {role === "employee" && <Nav.Link as={NavLink} to="/employee">Self Appraisal</Nav.Link>}
+            {role === "employee" && <Nav.Link as={NavLink} to="/self-appraisal-list">Self Appraisal</Nav.Link>}
             {role === "employee" && <Nav.Link as={NavLink} to="/employee">View Reports</Nav.Link>}
           </Nav>
           <Nav>
