@@ -9,6 +9,8 @@ namespace EAA.Domain.DTO.Request.Appraisal
         [Required]
         public int KpiId { get; set; }
 
+        public int ResponseId { get; set; }
+
         [Range(0, 5, ErrorMessage = "Score must be between 0 and 5")]
         public decimal SelfScore { get; set; }           
 
@@ -37,7 +39,10 @@ namespace EAA.Domain.DTO.Request.Appraisal
         public decimal? OverallSelfScore { get; set; }
         public decimal? OverallSupervisorScore { get; set; }
         public string? FinalRating { get; set; }
-        public string? Status { get; set; }              
+        public string? Status { get; set; }
+
+        public string? OverallAssociateComment { get; set; }
+        public string? OverallSupervisorComment { get; set; }
 
         public DateTime? CreatedOn { get; set; }
         public DateTime? ModifiedOn { get; set; }

@@ -11,5 +11,9 @@ namespace EAA.Infrastructure.Logic.Appraisal
         bool SubmitAppraisal(AppraisalDTO request);
 
         bool SubmitManagerReview(AppraisalDTO request, int managerId);
+
+        List<UnitAppraisalResponseDTO> GetUnitAppraisals(int managerId, int? cycleId = null);
+
+        bool UpdateAppraisal(int appraisalId, AppraisalDTO request);
     }
 }

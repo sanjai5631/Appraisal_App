@@ -10,9 +10,10 @@ namespace EAA.Services.Services.SelfAppraisal
 {
     public interface ISelfAppraisal_Services
     {
-
         ApiResponse<List<SelfAppraisalResponse_DTO>> GetAllSelfAppraisal(int employeeId);
 
         ApiResponse<SelfAppraisalResponse_DTO> GetSelfAppraisalById(int financialYearId);
+
+        ApiResponse<List<GetAppraisalResponse_DTO>> GetAppraisal(int employeeId);
     }
 }

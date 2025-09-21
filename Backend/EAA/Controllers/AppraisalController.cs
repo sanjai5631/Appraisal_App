@@ -118,5 +118,77 @@ namespace EAA.Controllers
                 });
             }
         }
+
+        [HttpGet("GetByUnitId")]
+        public IActionResult GetUnitAppraisals([FromQuery] int managerId, [FromQuery] int? cycleId = null)
+        {
+            try
+            {
+                var response = _appraisalService.GetUnitAppraisals(managerId, cycleId);
+
+                if (response.Data == null || !response.Data.Any())
+                {
+                    return NotFound(new ApiResponse<List<UnitAppraisalResponseDTO>>
+                    {
+                        StatusCode = 404,
+                        Message = "No appraisals found for the given filters.",
+                        Data = new List<UnitAppraisalResponseDTO>()
+                    });
+                }
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, "AppraisalController -> GetUnitAppraisals");
+                return StatusCode(500, new ApiResponse<List<UnitAppraisalResponseDTO>>
+                {
+                    StatusCode = 500,
+                    Message = "Error occurred while retrieving unit appraisals.",
+                    Data = new List<UnitAppraisalResponseDTO>()
+                });
+            }
+        }
+
+        [HttpPut]
+        [Route("UpdateAppraisal")]
+        public IActionResult UpdateAppraisal(int appraisalId, [FromBody] AppraisalDTO request)
+        {
+            try
+            {
+                var response = _appraisalService.UpdateAppraisal(appraisalId, request);
+
+                if (response.Data)
+                {
+                    return Ok(new ApiResponse<bool>
+                    {
+                        StatusCode = 200,
+                        Message = "Appraisal updated successfully",
+                        Data = true
+                    });
+                }
+                else
+                {
+                    return BadRequest(new ApiResponse<bool>
+                    {
+                        StatusCode = 400,
+                        Message = "Failed to update appraisal",
+                        Data = false
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, "AppraisalController -> UpdateAppraisal");
+                return StatusCode(500, new ApiResponse<bool>
+                {
+                    StatusCode = 500,
+                    Message = "Error updating appraisal",
+                    Data = false
+                });
+            }
+        }
+
+
     }
 }

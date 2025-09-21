@@ -1,18 +1,52 @@
-// src/pages/employee/AddEmployee.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { Form, Button, Row, Col } from "react-bootstrap";
+import { Form, Button, Row, Col, Spinner } from "react-bootstrap";
 import { useLocation, useNavigate } from "react-router-dom";
 import CardWrapper from "../../Component/CardWrapper";
+
+const genderMap = { Male: "1", Female: "2", Other: "3" };
+const roleMap = {
+  "Developer": "1",
+  "Tester": "2",
+  "Marketing": "3",
+  "Client Support": "4",
+  "HR & Finance": "5",
+  "Manager": "6",
+};
+const qualificationMap = {
+  "B.Tech": "1",
+  "MCA": "2",
+  "MBA HR": "3",
+  "MBA Marketing": "4",
+  "CA": "5",
+  "B.E": "6",
+  "BA": "7",
+};
+const unitMap = {
+  "Unit 1": "1",
+  "Unit 2": "2",
+  "Unit 3": "3",
+  "Unit 4": "4",
+  "Unit 5": "5",
+};
+const departmentMap = {
+  "Development": "1",
+  "Testing": "2",
+  "Marketing": "3",
+  "Client Support": "4",
+  "Human Resources": "5",
+};
 
 const AddEmployee = () => {
   const location = useLocation();
   const navigate = useNavigate();
-
   const employeeId = location.state?.employeeId || null;
+  const isUpdateMode = !!employeeId;
+
+  const [loading, setLoading] = useState(false);
 
   const formik = useFormik({
     initialValues: {
@@ -29,25 +63,28 @@ const AddEmployee = () => {
       joiningDate: "",
       unitId: "",
       departmentId: "",
+      isActive: true,
     },
     enableReinitialize: true,
     validationSchema: Yup.object({
-      empCode: Yup.string().max(20).min(3, "Minimum 3 characters required")
-        .max(20, "Maximum 20 characters allowed").required("Employee Code is required"),
+      empCode: Yup.string()
+        .min(3, "Minimum 3 characters")
+        .max(20, "Maximum 20 characters")
+        .required("Employee Code is required"),
       name: Yup.string().max(100).required("Employee name is required"),
       genderId: Yup.string().required("Gender is required"),
       email: Yup.string().email().required("Email address is required"),
-      password: employeeId
-        ? Yup.string()
+      password: isUpdateMode
+        ? Yup.string() // optional for update
         : Yup.string().min(6).max(50).required("Password is required"),
       roleId: Yup.string().required("Role is required"),
       unitId: Yup.string().required("Unit is required"),
-      departmentId: Yup.string().required("Department is required")
+      departmentId: Yup.string().required("Department is required"),
     }),
     onSubmit: async (values, { resetForm }) => {
-      debugger
       try {
-        // build payload
+        setLoading(true);
+
         const payload = {
           EmpCode: values.empCode,
           Name: values.name,
@@ -66,30 +103,20 @@ const AddEmployee = () => {
           IsActive: values.isActive,
         };
 
-        // password only if set
-        if (values.password) {
-          payload.Password = values.password;
-        }
+        if (values.password) payload.Password = values.password;
 
-        // set audit fields
-        if (employeeId) {
-          // update
+        if (isUpdateMode) {
           await axios.put(
             `https://localhost:7098/api/Employee/UpdateEmployeeDetails?employeeId=${employeeId}`,
             payload,
-            {
-              headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-            }
+            { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
           );
           Swal.fire("Updated", "Employee updated successfully!", "success");
         } else {
-          // save
           await axios.post(
             "https://localhost:7098/api/Employee/SaveEmployeeDetails",
             payload,
-            {
-              headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-            }
+            { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
           );
           Swal.fire("Success", "Employee added successfully!", "success");
           resetForm();
@@ -99,20 +126,57 @@ const AddEmployee = () => {
       } catch (error) {
         console.error("Error saving employee:", error.response?.data || error.message);
         Swal.fire("Error", "Failed to save employee.", "error");
+      } finally {
+        setLoading(false);
       }
     },
   });
 
-  useEffect(() => {
-    if (employeeId) {
-      GetEmployeeData(employeeId)
+  const fetchEmployee = async (id) => {
+    try {
+      setLoading(true);
+      const resp = await axios.get(
+        `https://localhost:7098/api/Employee/GetEmployee?EmployeeId=${id}`,
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+      );
+
+      const emp = resp.data.data;
+      console.log("Fetched employee:", emp);
+
+      formik.setValues({
+        empCode: emp.empCode || "",
+        name: emp.name || "",
+        genderId: genderMap[emp.gender] || "",
+        religion: emp.religion || "",
+        phone: emp.phone || "",
+        email: emp.email || "",
+        password: "",
+        roleId: roleMap[emp.role] || "",
+        qualificationId: qualificationMap[emp.qualification] || "",
+        dob: emp.dob ? emp.dob.split("T")[0] : "",
+        joiningDate: emp.joiningDate ? emp.joiningDate.split("T")[0] : "",
+        unitId: unitMap[emp.unit] || "",
+        departmentId: departmentMap[emp.department] || "",
+        isActive: emp.isActive ?? true,
+      });
+    } catch (error) {
+      console.error("Error fetching employee:", error);
+      Swal.fire("Error", "Failed to fetch employee data.", "error");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (isUpdateMode) fetchEmployee(employeeId);
   }, [employeeId]);
 
-  const GetEmployeeData = async (employeeId) => {
-    const resp = await axios.get(`https://localhost:7098/api/Employee/GetEmployee?EmployeeId=${employeeId}`);
-    const employeeData = resp.data;
-    formik.setValues(employeeData);
+  if (loading) {
+    return (
+      <div className="text-center mt-5">
+        <Spinner animation="border" />
+      </div>
+    );
   }
 
   return (
@@ -126,24 +190,22 @@ const AddEmployee = () => {
               <div className="d-flex align-items-center">
                 <i className="bi bi-person-plus-fill me-2"></i>
                 <h4 className="mb-0 text-dark">
-                  {employeeId ? "Update Employee" : "Add Employee"}
+                  {isUpdateMode ? "Update Employee" : "Add Employee"}
                 </h4>
               </div>
             }
           >
             <Form onSubmit={formik.handleSubmit}>
-              {/* Employee Code & Name & Gender */}
+              {/* Employee Code, Name, Gender */}
               <Row className="mb-3">
                 <Col md={4}>
                   <Form.Group>
                     <Form.Label>Employee Code *</Form.Label>
                     <Form.Control
                       type="text"
-                      name="empCode"
-                      value={formik.values.empCode}
-                      onChange={formik.handleChange}
+                      {...formik.getFieldProps("empCode")}
                       isInvalid={!!formik.errors.empCode && formik.touched.empCode}
-                      maxLength={10} />
+                    />
                     <Form.Control.Feedback type="invalid">
                       {formik.errors.empCode}
                     </Form.Control.Feedback>
@@ -154,9 +216,7 @@ const AddEmployee = () => {
                     <Form.Label>Name *</Form.Label>
                     <Form.Control
                       type="text"
-                      name="name"
-                      value={formik.values.name}
-                      onChange={formik.handleChange}
+                      {...formik.getFieldProps("name")}
                       isInvalid={!!formik.errors.name && formik.touched.name}
                     />
                     <Form.Control.Feedback type="invalid">
@@ -168,9 +228,7 @@ const AddEmployee = () => {
                   <Form.Group>
                     <Form.Label>Gender *</Form.Label>
                     <Form.Select
-                      name="genderId"
-                      value={formik.values.genderId}
-                      onChange={formik.handleChange}
+                      {...formik.getFieldProps("genderId")}
                       isInvalid={!!formik.errors.genderId && formik.touched.genderId}
                     >
                       <option value="">Select Gender</option>
@@ -185,16 +243,14 @@ const AddEmployee = () => {
                 </Col>
               </Row>
 
-              {/* Religion & Phone & Email */}
+              {/* Religion, Phone, Email */}
               <Row className="mb-3">
                 <Col md={4}>
                   <Form.Group>
                     <Form.Label>Religion</Form.Label>
                     <Form.Control
                       type="text"
-                      name="religion"
-                      value={formik.values.religion}
-                      onChange={formik.handleChange}
+                      {...formik.getFieldProps("religion")}
                     />
                   </Form.Group>
                 </Col>
@@ -203,9 +259,7 @@ const AddEmployee = () => {
                     <Form.Label>Phone</Form.Label>
                     <Form.Control
                       type="text"
-                      name="phone"
-                      value={formik.values.phone}
-                      onChange={formik.handleChange}
+                      {...formik.getFieldProps("phone")}
                     />
                   </Form.Group>
                 </Col>
@@ -214,9 +268,7 @@ const AddEmployee = () => {
                     <Form.Label>Email *</Form.Label>
                     <Form.Control
                       type="email"
-                      name="email"
-                      value={formik.values.email}
-                      onChange={formik.handleChange}
+                      {...formik.getFieldProps("email")}
                       isInvalid={!!formik.errors.email && formik.touched.email}
                     />
                     <Form.Control.Feedback type="invalid">
@@ -226,19 +278,16 @@ const AddEmployee = () => {
                 </Col>
               </Row>
 
-
-              {/* Password & Role & Qualification */}
+              {/* Password, Role, Qualification */}
               <Row className="mb-3">
                 <Col md={4}>
                   <Form.Group>
                     <Form.Label>
-                      Password {employeeId ? "(Leave blank to keep current)" : "*"}
+                      Password {isUpdateMode ? "(Leave blank to keep current)" : "*"}
                     </Form.Label>
                     <Form.Control
                       type="password"
-                      name="password"
-                      value={formik.values.password}
-                      onChange={formik.handleChange}
+                      {...formik.getFieldProps("password")}
                       isInvalid={!!formik.errors.password && formik.touched.password}
                     />
                     <Form.Control.Feedback type="invalid">
@@ -250,9 +299,7 @@ const AddEmployee = () => {
                   <Form.Group>
                     <Form.Label>Role *</Form.Label>
                     <Form.Select
-                      name="roleId"
-                      value={formik.values.roleId}
-                      onChange={formik.handleChange}
+                      {...formik.getFieldProps("roleId")}
                       isInvalid={!!formik.errors.roleId && formik.touched.roleId}
                     >
                       <option value="">Select Role</option>
@@ -260,7 +307,7 @@ const AddEmployee = () => {
                       <option value="2">Tester</option>
                       <option value="3">Marketing</option>
                       <option value="4">Client Support</option>
-                      <option value="5">HR</option>
+                      <option value="5">HR & Finance</option>
                       <option value="6">Manager</option>
                     </Form.Select>
                     <Form.Control.Feedback type="invalid">
@@ -271,11 +318,7 @@ const AddEmployee = () => {
                 <Col md={4}>
                   <Form.Group>
                     <Form.Label>Qualification</Form.Label>
-                    <Form.Select
-                      name="qualificationId"
-                      value={formik.values.qualificationId}
-                      onChange={formik.handleChange}
-                    >
+                    <Form.Select {...formik.getFieldProps("qualificationId")}>
                       <option value="">Select Qualification</option>
                       <option value="1">B.Tech</option>
                       <option value="2">MCA</option>
@@ -289,16 +332,14 @@ const AddEmployee = () => {
                 </Col>
               </Row>
 
-              {/* DOB & Joining Date & Unit */}
+              {/* DOB, Joining Date, Unit */}
               <Row className="mb-3">
                 <Col md={4}>
                   <Form.Group>
                     <Form.Label>Date of Birth</Form.Label>
                     <Form.Control
                       type="date"
-                      name="dob"
-                      value={formik.values.dob}
-                      onChange={formik.handleChange}
+                      {...formik.getFieldProps("dob")}
                     />
                   </Form.Group>
                 </Col>
@@ -307,9 +348,7 @@ const AddEmployee = () => {
                     <Form.Label>Joining Date</Form.Label>
                     <Form.Control
                       type="date"
-                      name="joiningDate"
-                      value={formik.values.joiningDate}
-                      onChange={formik.handleChange}
+                      {...formik.getFieldProps("joiningDate")}
                     />
                   </Form.Group>
                 </Col>
@@ -317,9 +356,7 @@ const AddEmployee = () => {
                   <Form.Group>
                     <Form.Label>Unit *</Form.Label>
                     <Form.Select
-                      name="unitId"
-                      value={formik.values.unitId}
-                      onChange={formik.handleChange}
+                      {...formik.getFieldProps("unitId")}
                       isInvalid={!!formik.errors.unitId && formik.touched.unitId}
                     >
                       <option value="">Select Unit</option>
@@ -336,17 +373,12 @@ const AddEmployee = () => {
                 </Col>
               </Row>
 
-
-              {/* Department & CreatedBy/ModifiedBy & Active Status */}
+              {/* Department, Active */}
               <Row className="mb-3">
                 <Col md={4}>
                   <Form.Group>
                     <Form.Label>Department *</Form.Label>
-                    <Form.Select
-                      name="departmentId"
-                      value={formik.values.departmentId}
-                      onChange={formik.handleChange}
-                    >
+                    <Form.Select {...formik.getFieldProps("departmentId")}>
                       <option value="">Select Department</option>
                       <option value="1">Development</option>
                       <option value="2">Testing</option>
@@ -368,10 +400,11 @@ const AddEmployee = () => {
                   />
                 </Col>
               </Row>
+
               <div className="text-end mt-4">
                 <Button type="submit" variant="primary" size="lg">
                   <i className="bi bi-check-circle me-2"></i>
-                  {employeeId ? "Update Employee" : "Save Employee"}
+                  {isUpdateMode ? "Update Employee" : "Save Employee"}
                 </Button>
               </div>
             </Form>

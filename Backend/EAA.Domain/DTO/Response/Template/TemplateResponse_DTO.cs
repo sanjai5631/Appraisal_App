@@ -7,7 +7,9 @@
         public string TemplateName { get; set; } = null!; 
         public string? TemplateDescription { get; set; }   
         public string? DepartmentName { get; set; }       
-        public List<TemplateKpiResponse_DTO> Kpis { get; set; } = new(); 
+        public List<TemplateKpiResponse_DTO> Kpis { get; set; } = new();
+        public string? OverallAssociateComment { get; set; }
+        public string? OverallSupervisorComment { get; set; }
     }
 
     // Response DTO for individual KPI in a template

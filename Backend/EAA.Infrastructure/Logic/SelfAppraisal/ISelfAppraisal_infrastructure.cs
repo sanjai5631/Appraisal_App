@@ -1,4 +1,7 @@
-﻿using EAA.Domain.DTO.Response.SelfAppraisal;
+﻿using EAA.Domain.DTO.Request.Employee;
+using EAA.Domain.DTO.Request.SelfAppraisal;
+using EAA.Domain.DTO.Response.Employee;
+using EAA.Domain.DTO.Response.SelfAppraisal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +14,7 @@ namespace EAA.Infrastructure.Logic.SelfAppraisal
     {
         List<SelfAppraisalResponse_DTO> GetAllSelfAppraisal(int employeeId);
         SelfAppraisalResponse_DTO GetSelfAppraisalById(int financialYearId);
-
+        List<EmployeeByUnitResponseDTO> GetEmployeesByUnit(EmployeesByUnitRequestDTO request);
+        List<GetAppraisalResponse_DTO> GetAppraisal(int employeeId);
     }
 }

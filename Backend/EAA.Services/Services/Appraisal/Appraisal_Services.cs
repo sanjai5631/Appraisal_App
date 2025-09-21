@@ -37,6 +37,28 @@ namespace EAA.Services.Services.Appraisal
             return response;
         }
 
+        public ApiResponse<List<UnitAppraisalResponseDTO>> GetUnitAppraisals(int managerId, int? cycleId = null)
+        {
+            var response = new ApiResponse<List<UnitAppraisalResponseDTO>>();
+            try
+            {
+                var result = _appraisalInfra.GetUnitAppraisals(managerId, cycleId);
+
+                response.Data = result;
+                response.StatusCode = (result != null && result.Any()) ? 200 : 404;
+                response.Message = (result != null && result.Any())
+                    ? "Unit appraisals retrieved successfully"
+                    : "No appraisals found for the given filters.";
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, $"Appraisal_Services -> GetUnitAppraisals(managerId: {managerId}, cycleId: {cycleId})");
+                response.StatusCode = 500;
+                response.Message = "Error retrieving unit appraisals";
+            }
+            return response;
+        }
+
         // Submit self-appraisal or new appraisal
         public ApiResponse<bool> SubmitAppraisal(AppraisalDTO request)
         {
@@ -76,5 +98,25 @@ namespace EAA.Services.Services.Appraisal
             }
             return response;
         }
+
+        public ApiResponse<bool> UpdateAppraisal(int appraisalId, AppraisalDTO request)
+        {
+            var response = new ApiResponse<bool>();
+            try
+            {
+                var result = _appraisalInfra.UpdateAppraisal(appraisalId, request); // Calls infrastructure layer
+                response.Data = result;
+                response.StatusCode = result ? 200 : 400;
+                response.Message = result ? "Appraisal updated successfully" : "Failed to update appraisal";
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, "Appraisal_Services -> UpdateAppraisal");
+                response.StatusCode = 500;
+                response.Message = "Error updating appraisal";
+            }
+            return response;
+        }
+
     }
 }

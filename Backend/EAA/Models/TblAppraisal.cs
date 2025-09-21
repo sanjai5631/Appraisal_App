@@ -29,6 +29,10 @@ public partial class TblAppraisal
 
     public int? ModifiedBy { get; set; }
 
+    public string? OverallAssociateComment { get; set; }
+
+    public string? OverallSupervisorComment { get; set; }
+
     public virtual TblEmployee? CreatedByNavigation { get; set; }
 
     public virtual TblAppraisalCycle? Cycle { get; set; }

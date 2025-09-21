@@ -34,6 +34,7 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
                     .Include(e => e.Role)
                     .Include(e => e.Qualification)
                     .Include(e => e.Unit)
+                    .Include(e => e.Dept)
                     .Include(e => e.CreatedByNavigation)
                     .Include(e => e.ModifiedByNavigation)
                     .Select(e => new EmployeeResponse_DTO
@@ -50,6 +51,7 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
                         Dob = e.Dob,
                         JoiningDate = e.JoiningDate,
                         Unit = e.Unit != null ? e.Unit.UnitName : null,
+                        Department = e.Dept != null ? e.Dept.DeptName : null,
                         IsActive = e.IsActive ?? true,
                         IsDeleted = e.IsDeleted ?? false,
                         CreatedOn = e.CreatedOn,
@@ -80,6 +82,7 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
                     .Include(emp => emp.Role)
                     .Include(emp => emp.Qualification)
                     .Include(emp => emp.Unit)
+                    .Include(e => e.Dept)
                     .Include(emp => emp.CreatedByNavigation)
                     .Include(emp => emp.ModifiedByNavigation)
                     .FirstOrDefault();
@@ -100,6 +103,7 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
                     Phone = e.Phone,
                     Email = e.Email,
                     Role = e.Role?.RoleName,
+                    Department = e.Dept != null ? e.Dept.DeptName : null,
                     Qualification = e.Qualification?.QualificationName,
                     Dob = e.Dob,
                     JoiningDate = e.JoiningDate,

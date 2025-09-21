@@ -51,7 +51,7 @@ function SelfAppraisalList() {
     // Navigate depending on status
     const handleAction = (item) => {
         const empId =localStorage.getItem("employeeId");
-        navigate("/self-appraisal-form", { state: { appraisalData: item,empId:empId } });
+        navigate("/self-appraisal-form", { state: { appraisalData: item,empId:empId} });
     };
 
     return (

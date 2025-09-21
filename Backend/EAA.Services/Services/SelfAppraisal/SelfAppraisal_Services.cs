@@ -1,4 +1,5 @@
 ﻿using EAA.Application;
+using EAA.Domain.DTO.Request.SelfAppraisal;
 using EAA.Domain.DTO.Response.SelfAppraisal;
 using EAA.Infrastructure.Logic.SelfAppraisal;
 using System;
@@ -51,6 +52,43 @@ namespace EAA.Services.Services.SelfAppraisal
 
             return response;
         }
+
+
+        public ApiResponse<List<GetAppraisalResponse_DTO>> GetAppraisal(int employeeId)
+        {
+            var response = new ApiResponse<List<GetAppraisalResponse_DTO>>();
+
+            try
+            {
+                // Call the infrastructure layer to get appraisal data
+                var data = _selfAppraisal.GetAppraisal(employeeId);
+
+                if (data == null)
+                {
+                    response.StatusCode = 404;
+                    response.Message = "Employee appraisal not found";
+                    response.Data = null;
+                }
+                else
+                {
+                    response.StatusCode = 200;
+                    response.Message = "Employee appraisal retrieved successfully";
+                    response.Data = data;
+                }
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, $"Error in SelfAppraisal_Services -> GetAppraisal({employeeId})");
+                response.StatusCode = 500;
+                response.Message = "Failed to retrieve employee appraisal";
+                response.Data = null;
+            }
+
+            return response;
+        }
+
+
+
 
         // Get a single self-appraisal cycle by financialYearId
         public ApiResponse<SelfAppraisalResponse_DTO> GetSelfAppraisalById(int financialYearId)

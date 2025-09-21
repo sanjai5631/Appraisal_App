@@ -30,8 +30,8 @@ function ViewEmployees() {
       const empData = Array.isArray(res.data.data)
         ? res.data.data
         : Array.isArray(res.data)
-          ? res.data
-          : [];
+        ? res.data
+        : [];
 
       if (empData.length === 0) {
         setError("No employees found.");
@@ -86,6 +86,31 @@ function ViewEmployees() {
     });
   };
 
+  // CSV Export function
+  const downloadCSV = (data) => {
+    if (!data || !data.length) return;
+
+    const headers = ["Employee Code", "Name", "Email", "Role", "Unit", "Department"];
+    const rows = data.map((emp) => [
+      emp.empCode || "",
+      emp.name || "",
+      emp.email || "",
+      emp.role || "",
+      emp.unit || "",
+      emp.department || "",
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute("download", "employees.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="container-fluid mt-5" >
@@ -105,6 +130,10 @@ function ViewEmployees() {
                   <button className="btn btn-primary btn-sm" onClick={() => navigate("/create-employee")}>
                     <PlusCircle className="me-1" />
                     Add Employee
+                  </button>
+                  <button className="btn btn-outline-success btn-sm" onClick={() => downloadCSV(employees)}>
+                    <i className="bi bi-download me-1"></i>
+                    Export CSV
                   </button>
                 </div>
               </div>

@@ -25,7 +25,8 @@ namespace EAA.Domain.DTO.Response.Appraisal
         public decimal? OverallSupervisorScore { get; set; }
         public string? FinalRating { get; set; }
         public string? Status { get; set; }
-
+        public string? OverallAssociateComment { get; set; }
+        public string? OverallSupervisorComment { get; set; }
         public DateTime? CreatedOn { get; set; }
         public DateTime? ModifiedOn { get; set; }
         public int? CreatedBy { get; set; }

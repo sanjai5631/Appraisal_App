@@ -9,5 +9,7 @@ namespace EAA.Services.Services.Appraisal
         ApiResponse<AppraisalResponseDTO> GetCurrentForm(int employeeId, int cycleId);
         ApiResponse<bool> SubmitAppraisal(AppraisalDTO request);
         ApiResponse<bool> SubmitManagerReview(AppraisalDTO request, int managerId);
+        ApiResponse<List<UnitAppraisalResponseDTO>> GetUnitAppraisals(int managerId, int? cycleId = null);
+        ApiResponse<bool> UpdateAppraisal(int appraisalId, AppraisalDTO request);
     }
 }

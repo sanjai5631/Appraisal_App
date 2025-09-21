@@ -211,6 +211,7 @@ namespace EAA.Infrastructure.Logic.AppraisalForm
                                          && a.CycleId == cycleId
                                          && a.TemplateId == template.TemplateId);
 
+                // Map KPI responses
                 var kpiResponses = template.TblTemplateKpis.Select(tk =>
                 {
                     var response = appraisal?.TblAppraisalResponses
@@ -218,6 +219,7 @@ namespace EAA.Infrastructure.Logic.AppraisalForm
 
                     return new TemplateKpiResponse_DTO
                     {
+                        
                         KpiId = tk.KpiId ?? 0,
                         KpiTitle = tk.Kpi?.Title ?? "",
                         KpiDescription = tk.Kpi?.Description ?? "",
@@ -229,24 +231,29 @@ namespace EAA.Infrastructure.Logic.AppraisalForm
                     };
                 }).ToList();
 
+                // Build DTO with overall comments
                 return new TemplateResponse_DTO
                 {
                     TemplateId = template.TemplateId,
                     TemplateName = template.TemplateName,
                     TemplateDescription = template.Description,
                     DepartmentName = template.Department?.DeptName ?? "",
-                    Kpis = kpiResponses
+                    Kpis = kpiResponses,
+                    OverallAssociateComment = appraisal?.OverallAssociateComment ?? "",    
+                    OverallSupervisorComment = appraisal?.OverallSupervisorComment ?? ""  
                 };
             }
             catch (Exception ex)
             {
-                _error.Capture(ex, $"Error in AppraisalTemplate_Infrastructure -> GetTemplateWithEmployeeScores({departmentId}, {employeeId}, {cycleId})");
+                _error.Capture(ex, $"Error in AppraisalTemplate_Infrastructure -> GetByDeptId({departmentId}, {employeeId}, {cycleId})");
                 return null;
             }
         }
 
-
     }
+
+
 }
+
 
 

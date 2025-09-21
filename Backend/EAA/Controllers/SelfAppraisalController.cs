@@ -1,5 +1,7 @@
 ﻿using EAA.Application;
+using EAA.Domain.DTO.Request.Employee;
 using EAA.Domain.DTO.Response.SelfAppraisal;
+using EAA.Infrastructure.Logic.SelfAppraisal;
 using EAA.Services.Services.SelfAppraisal;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -11,13 +13,15 @@ namespace EAA.Controllers
     [ApiController]
     public class SelfAppraisalController : ControllerBase
     {
+        private readonly ISelfAppraisal_infrastructure _infra;
         private readonly ISelfAppraisal_Services _selfAppraisalService;
         private readonly ErrorHandler _error;
 
-        public SelfAppraisalController(ISelfAppraisal_Services selfAppraisalService, ErrorHandler error)
+        public SelfAppraisalController(ISelfAppraisal_Services selfAppraisalService, ErrorHandler error,ISelfAppraisal_infrastructure self)
         {
             _selfAppraisalService = selfAppraisalService;
             _error = error;
+            _infra = self;
         }
 
         // GET: api/SelfAppraisal/GetAllSelfAppraisal
@@ -69,5 +73,40 @@ namespace EAA.Controllers
 
             return StatusCode(response.StatusCode, response);
         }
+
+        [HttpGet]
+        [Route("GetEmployeeByIId")]
+        public IActionResult GetAppraial(int employeeId)
+        {
+            try
+            {
+                return Ok(_selfAppraisalService.GetAppraisal(employeeId));
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+
+
+
+        [HttpGet]
+        [Route("getemployee")]
+        public IActionResult GetEmployeesByUnit([FromQuery] int unitId)
+        {
+            try
+            {
+                var request = new EmployeesByUnitRequestDTO { UnitId = unitId };
+                return Ok(_infra.GetEmployeesByUnit(request));
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+
     }
 }

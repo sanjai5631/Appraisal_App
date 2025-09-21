@@ -54,6 +54,86 @@ namespace EAA.Infrastructure.Logic.Appraisal
             };
         }
 
+        public List<UnitAppraisalResponseDTO> GetUnitAppraisals(int managerId, int? cycleId = null)
+        {
+            // 1. Get the manager's unit
+            var manager = _context.TblEmployees.FirstOrDefault(e => e.EmployeeId == managerId);
+            if (manager == null || manager.UnitId == null)
+                return new List<UnitAppraisalResponseDTO>();
+
+            var unitId = manager.UnitId;
+
+            // 2. Get all employees in the manager's unit
+            var employeesInUnit = _context.TblEmployees
+                .Where(e => e.UnitId == unitId && e.IsActive == true)
+                .Select(e => new
+                {
+                    e.EmployeeId,
+                    e.Name,
+                    e.EmpCode,
+                    e.Email,
+                    UnitName = e.Unit!.UnitName,
+                    DepartmentName = e.Dept!.DeptName
+                })
+                .ToList();
+
+            // 3. Get appraisals for these employees
+            var employeeIds = employeesInUnit.Select(e => e.EmployeeId).ToList();
+
+            var appraisalsQuery = _context.TblAppraisals
+                .Where(a => a.EmployeeId.HasValue && employeeIds.Contains(a.EmployeeId.Value));
+
+            if (cycleId.HasValue)
+                appraisalsQuery = appraisalsQuery.Where(a => a.CycleId == cycleId.Value);
+
+            var appraisals = appraisalsQuery
+                .Include(a => a.Cycle)
+                .Include(a => a.TblAppraisalResponses)
+                    .ThenInclude(r => r.Kpi)
+                .Include(a => a.Employee)
+                .ToList();
+
+            // 4. Map to DTO
+            var result = appraisals.Select(a =>
+            {
+                var emp = employeesInUnit.FirstOrDefault(e => e.EmployeeId == a.EmployeeId);
+
+                return new UnitAppraisalResponseDTO
+                {
+                    AppraisalId = a.AppraisalId,
+                    EmployeeId = a.EmployeeId!.Value,
+                    EmployeeName = emp?.Name ?? "",
+                    EmployeeCode = emp?.EmpCode ?? "",
+                    Email = emp?.Email ?? "",
+                    UnitName = emp?.UnitName ?? "",
+                    DepartmentName = emp?.DepartmentName ?? "",
+                    CycleId = a.CycleId ?? 0,
+                    CycleName = a.Cycle?.CycleName ?? "",
+                    StartDate = a.Cycle.StartDate,
+                    DueDate = a.Cycle.EndDate,
+                    Status = a.Status ?? "",
+                    OverallSelfScore = a.OverallSelfScore,
+                    OverallSupervisorScore = a.OverallSupervisorScore,
+                    OverallAssociateComment = a.OverallAssociateComment,
+                    OverallSupervisorComment = a.OverallSupervisorComment,
+                    KpiResponses = a.TblAppraisalResponses.Select(r => new UnitAppraisalKpiResponseDTO
+                    {
+                        KpiId = r.KpiId ?? 0,
+                        KpiTitle = r.Kpi?.Title ?? "",
+                        KpiDescription = r.Kpi?.Description ?? "",
+                        SelfScore = r.SelfScore,
+                        SupervisorScore = r.SupervisorScore,
+                        AssociateComment = r.AssociateComment,
+                        SupervisorComment = r.SupervisorComment
+                    }).ToList()
+                };
+            }).ToList();
+
+            return result;
+        }
+
+
+
         // Submit a self-appraisal (or new appraisal)
         public bool SubmitAppraisal(AppraisalDTO request)
          {
@@ -73,6 +153,8 @@ namespace EAA.Infrastructure.Logic.Appraisal
                 appraisal.Status = request.Status ?? "Pending";
                 appraisal.ModifiedOn = DateTime.Now;
                 appraisal.ModifiedBy = request.CreatedBy;
+                appraisal.OverallAssociateComment = request.OverallAssociateComment;      
+                appraisal.OverallSupervisorComment = request.OverallSupervisorComment;
 
                 // Remove old KPI responses
                 _context.TblAppraisalResponses.RemoveRange(appraisal.TblAppraisalResponses);
@@ -88,7 +170,9 @@ namespace EAA.Infrastructure.Logic.Appraisal
                     Status = request.Status ?? "Pending",
                     OverallSelfScore = request.OverallSelfScore,
                     CreatedOn = DateTime.Now,
-                    CreatedBy = request.CreatedBy
+                    CreatedBy = request.CreatedBy,
+                    OverallAssociateComment = request.OverallAssociateComment,      
+                    OverallSupervisorComment = request.OverallSupervisorComment,
                 };
                 _context.TblAppraisals.Add(appraisal);
             }
@@ -144,5 +228,64 @@ namespace EAA.Infrastructure.Logic.Appraisal
             _context.SaveChanges();
             return true;
         }
+
+        public bool UpdateAppraisal(int appraisalId, AppraisalDTO request)
+        {
+            var appraisal = _context.TblAppraisals
+                .Include(a => a.TblAppraisalResponses)
+                .FirstOrDefault(a => a.AppraisalId == appraisalId);
+
+            if (appraisal == null) return false;
+
+            // Update main appraisal fields
+            appraisal.Status = request.Status ?? appraisal.Status;
+            appraisal.OverallSelfScore = request.OverallSelfScore;
+            appraisal.OverallAssociateComment = request.OverallAssociateComment;
+            appraisal.OverallSupervisorComment = request.OverallSupervisorComment;
+            appraisal.ModifiedOn = DateTime.Now;
+            appraisal.ModifiedBy = request.ModifiedBy;
+
+            // Update or add KPI responses
+            foreach (var kpi in request.KPIResponses)
+            {
+                var response = _context.TblAppraisalResponses
+                    .FirstOrDefault(a => a.ResponseId == kpi.ResponseId);
+
+                if (response != null)
+                {
+                    // Update existing response
+                    response.KpiId = kpi.KpiId;
+                    response.SelfScore = kpi.SelfScore;
+                    response.SupervisorScore = kpi.SupervisorScore;
+                    response.AssociateComment = kpi.AssociateComment;
+                    response.SupervisorComment = kpi.SupervisorComment;
+                    response.ModifiedOn = DateTime.Now;
+                    response.ModifiedBy = request.ModifiedBy;
+                }
+                else
+                {
+                    // Optional: create new response if it doesn't exist
+                    response = new TblAppraisalResponse
+                    {
+                        KpiId = kpi.KpiId,
+                        SelfScore = kpi.SelfScore,
+                        SupervisorScore = kpi.SupervisorScore,
+                        AssociateComment = kpi.AssociateComment,
+                        SupervisorComment = kpi.SupervisorComment,
+                        CreatedOn = DateTime.Now,
+                        CreatedBy = request.ModifiedBy,
+                        AppraisalId = appraisalId
+                    };
+                    _context.TblAppraisalResponses.Add(response);
+                }
+            }
+
+            // Save all changes at once
+            _context.SaveChanges();
+
+            return true;
+        }
+
+
     }
 }
