@@ -2,6 +2,7 @@
 using EAA.Domain.DTO.Request.Appraisal;
 using EAA.Domain.DTO.Response.Appraisal;
 using EAA.Services.Services.Appraisal;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Security.Claims;
@@ -10,6 +11,7 @@ namespace EAA.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class AppraisalController : ControllerBase
     {
         private readonly IAppraisal_Services _appraisalService;

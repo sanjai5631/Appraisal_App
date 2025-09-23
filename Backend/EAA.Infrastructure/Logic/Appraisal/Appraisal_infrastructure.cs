@@ -240,6 +240,10 @@ namespace EAA.Infrastructure.Logic.Appraisal
             // Update main appraisal fields
             appraisal.Status = request.Status ?? appraisal.Status;
             appraisal.OverallSelfScore = request.OverallSelfScore;
+
+            // Calculate OverallSupervisorScore automatically from KPI responses
+            appraisal.OverallSupervisorScore = request.KPIResponses?.Sum(k => k.SupervisorScore) ?? 0;
+            appraisal.FinalRating = request.FinalRating;
             appraisal.OverallAssociateComment = request.OverallAssociateComment;
             appraisal.OverallSupervisorComment = request.OverallSupervisorComment;
             appraisal.ModifiedOn = DateTime.Now;
@@ -264,7 +268,7 @@ namespace EAA.Infrastructure.Logic.Appraisal
                 }
                 else
                 {
-                    // Optional: create new response if it doesn't exist
+                    // Create new response if it doesn't exist
                     response = new TblAppraisalResponse
                     {
                         KpiId = kpi.KpiId,
@@ -285,7 +289,5 @@ namespace EAA.Infrastructure.Logic.Appraisal
 
             return true;
         }
-
-
     }
 }

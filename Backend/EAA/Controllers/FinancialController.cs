@@ -1,14 +1,17 @@
 ﻿using EAA.Application;
 using EAA.Domain.DTO.Request.Financial;
 using EAA.Services.Services.FinancialYear;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 
 namespace EAA.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class FinancialController : ControllerBase
     {
         private readonly IFinancial_Services _financialYearService;
@@ -75,6 +78,7 @@ namespace EAA.Controllers
         {
             try
             {
+                
                 return Ok(_financialYearService.UpdateFinancialYear(financialYearId, request));
             }
             catch (Exception ex)

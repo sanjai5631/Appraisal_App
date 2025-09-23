@@ -1,4 +1,5 @@
 ﻿using EAA.Application;
+using EAA.Domain.DTO.Request.GetAllAppraisal;
 using EAA.Domain.DTO.Request.SelfAppraisal;
 using EAA.Domain.DTO.Response.SelfAppraisal;
 using EAA.Infrastructure.Logic.SelfAppraisal;
@@ -20,6 +21,39 @@ namespace EAA.Services.Services.SelfAppraisal
             _selfAppraisal = selfAppraisalInfrastructure;
             _error = errorHandler;
         }
+
+        public ApiResponse<List<GetAppraisalDetailResponse_DTO>> GetAllAppraisal()
+        {
+            var response = new ApiResponse<List<GetAppraisalDetailResponse_DTO>>();
+
+            try
+            {
+                var data = _selfAppraisal.GetAllAppraisal();
+
+                if (data == null || !data.Any())
+                {
+                    response.StatusCode = 404;
+                    response.Message = "No appraisals found";
+                    response.Data = new List<GetAppraisalDetailResponse_DTO>();
+                }
+                else
+                {
+                    response.StatusCode = 200;
+                    response.Message = "Appraisals retrieved successfully";
+                    response.Data = data;
+                }
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, "Error in SelfAppraisal_Services -> GetAllAppraisal");
+                response.StatusCode = 500;
+                response.Message = "Failed to retrieve appraisals";
+                response.Data = new List<GetAppraisalDetailResponse_DTO>();
+            }
+
+            return response;
+        }
+
 
         // Get all self-appraisal cycles
         public ApiResponse<List<SelfAppraisalResponse_DTO>> GetAllSelfAppraisal(int employeeId)
@@ -53,41 +87,38 @@ namespace EAA.Services.Services.SelfAppraisal
             return response;
         }
 
-
-        public ApiResponse<List<GetAppraisalResponse_DTO>> GetAppraisal(int employeeId)
+        public ApiResponse<List<GetAppraisalDetailResponse_DTO>> GetAppraisalById(int appraisalId)
         {
-            var response = new ApiResponse<List<GetAppraisalResponse_DTO>>();
+            var response = new ApiResponse<List<GetAppraisalDetailResponse_DTO>>();
 
             try
             {
-                // Call the infrastructure layer to get appraisal data
-                var data = _selfAppraisal.GetAppraisal(employeeId);
+                // Call the infrastructure layer to get appraisal(s) by ID
+                var data = _selfAppraisal.GetAppraisalById(appraisalId);
 
-                if (data == null)
+                if (data == null || !data.Any())
                 {
                     response.StatusCode = 404;
-                    response.Message = "Employee appraisal not found";
-                    response.Data = null;
+                    response.Message = "Appraisal not found";
+                    response.Data = new List<GetAppraisalDetailResponse_DTO>();
                 }
                 else
                 {
                     response.StatusCode = 200;
-                    response.Message = "Employee appraisal retrieved successfully";
+                    response.Message = "Appraisal retrieved successfully";
                     response.Data = data;
                 }
             }
             catch (Exception ex)
             {
-                _error.Capture(ex, $"Error in SelfAppraisal_Services -> GetAppraisal({employeeId})");
+                _error.Capture(ex, $"Error in SelfAppraisal_Services -> GetAppraisalById({appraisalId})");
                 response.StatusCode = 500;
-                response.Message = "Failed to retrieve employee appraisal";
-                response.Data = null;
+                response.Message = "Failed to retrieve appraisal";
+                response.Data = new List<GetAppraisalDetailResponse_DTO>();
             }
 
             return response;
         }
-
-
 
 
         // Get a single self-appraisal cycle by financialYearId
@@ -116,6 +147,38 @@ namespace EAA.Services.Services.SelfAppraisal
                 _error.Capture(ex, $"Error in SelfAppraisal_Services -> GetSelfAppraisalById({financialYearId})");
                 response.StatusCode = 500;
                 response.Message = "Failed to retrieve appraisal cycle";
+            }
+
+            return response;
+        }
+        public ApiResponse<List<GetAppraisalResponse_DTO>> GetAppraisal(int employeeId)
+        {
+            var response = new ApiResponse<List<GetAppraisalResponse_DTO>>();
+
+            try
+            {
+                // Call the infrastructure layer to get appraisal data
+                var data = _selfAppraisal.GetAppraisal(employeeId);
+
+                if (data == null)
+                {
+                    response.StatusCode = 404;
+                    response.Message = "Employee appraisal not found";
+                    response.Data = null;
+                }
+                else
+                {
+                    response.StatusCode = 200;
+                    response.Message = "Employee appraisal retrieved successfully";
+                    response.Data = data;
+                }
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, $"Error in SelfAppraisal_Services -> GetAppraisal({employeeId})");
+                response.StatusCode = 500;
+                response.Message = "Failed to retrieve employee appraisal";
+                response.Data = null;
             }
 
             return response;

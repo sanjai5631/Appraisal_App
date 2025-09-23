@@ -1,8 +1,10 @@
 ﻿using EAA.Application;
 using EAA.Domain.DTO.Request.Employee;
+using EAA.Domain.DTO.Request.GetAllAppraisal;
 using EAA.Domain.DTO.Response.SelfAppraisal;
 using EAA.Infrastructure.Logic.SelfAppraisal;
 using EAA.Services.Services.SelfAppraisal;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -11,17 +13,17 @@ namespace EAA.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class SelfAppraisalController : ControllerBase
     {
-        private readonly ISelfAppraisal_infrastructure _infra;
+       
         private readonly ISelfAppraisal_Services _selfAppraisalService;
         private readonly ErrorHandler _error;
 
-        public SelfAppraisalController(ISelfAppraisal_Services selfAppraisalService, ErrorHandler error,ISelfAppraisal_infrastructure self)
+        public SelfAppraisalController(ISelfAppraisal_Services selfAppraisalService, ErrorHandler error)
         {
             _selfAppraisalService = selfAppraisalService;
             _error = error;
-            _infra = self;
         }
 
         // GET: api/SelfAppraisal/GetAllSelfAppraisal
@@ -74,39 +76,80 @@ namespace EAA.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+
         [HttpGet]
-        [Route("GetEmployeeByIId")]
+        [Route("GetAllAppraisal")]
+        public IActionResult GetAllAppraisal()
+        {
+            var response = new ApiResponse<List<GetAppraisalDetailResponse_DTO>>();
+            try
+            {
+                response = _selfAppraisalService.GetAllAppraisal();
+
+                if (response.Data == null || response.Data.Count == 0)
+                {
+                    response.StatusCode = 404;
+                    response.Message = "No appraisals found.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, "SelfAppraisalController -> GetAllAppraisal");
+                response.StatusCode = 500;
+                response.Message = "Failed to retrieve appraisals.";
+            }
+
+            return StatusCode(response.StatusCode, response);
+        }
+
+        [HttpGet]
+        [Route("GetAppraisalById")]
+        public IActionResult GetAppraisalById(int appraisalId)
+        {
+            var response = new ApiResponse<List<GetAppraisalDetailResponse_DTO>>();
+            try
+            {
+                response = _selfAppraisalService.GetAppraisalById(appraisalId);
+
+                if (response.Data == null || response.Data.Count == 0)
+                {
+                    response.StatusCode = 404;
+                    response.Message = $"Appraisal with ID {appraisalId} not found.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, $"SelfAppraisalController -> GetAppraisalById({appraisalId})");
+                response.StatusCode = 500;
+                response.Message = "Failed to retrieve appraisal.";
+            }
+
+            return StatusCode(response.StatusCode, response);
+        }
+
+        [HttpGet]
+        [Route("GetEmployeeById")]
         public IActionResult GetAppraial(int employeeId)
         {
+            var response = new ApiResponse<List<GetAppraisalResponse_DTO>>();
             try
             {
-                return Ok(_selfAppraisalService.GetAppraisal(employeeId));
-            }
-            catch (Exception)
-            {
+                response = _selfAppraisalService.GetAppraisal(employeeId);
 
-                throw;
+                if (response.Data == null || response.Data.Count == 0)
+                {
+                    response.StatusCode = 404;
+                    response.Message = $"No appraisals found for employee ID {employeeId}.";
+                }
             }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, $"SelfAppraisalController -> GetAppraial({employeeId})");
+                response.StatusCode = 500;
+                response.Message = "Failed to retrieve employee appraisal.";
+            }
+
+            return StatusCode(response.StatusCode, response);
         }
-
-
-
-
-        [HttpGet]
-        [Route("getemployee")]
-        public IActionResult GetEmployeesByUnit([FromQuery] int unitId)
-        {
-            try
-            {
-                var request = new EmployeesByUnitRequestDTO { UnitId = unitId };
-                return Ok(_infra.GetEmployeesByUnit(request));
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
-
-
     }
 }

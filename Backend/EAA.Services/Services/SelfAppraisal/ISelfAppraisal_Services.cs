@@ -1,4 +1,5 @@
 ﻿using EAA.Application;
+using EAA.Domain.DTO.Request.GetAllAppraisal;
 using EAA.Domain.DTO.Response.SelfAppraisal;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,10 @@ namespace EAA.Services.Services.SelfAppraisal
         ApiResponse<List<SelfAppraisalResponse_DTO>> GetAllSelfAppraisal(int employeeId);
 
         ApiResponse<SelfAppraisalResponse_DTO> GetSelfAppraisalById(int financialYearId);
+
+        ApiResponse<List<GetAppraisalDetailResponse_DTO>> GetAllAppraisal();
+
+        ApiResponse<List<GetAppraisalDetailResponse_DTO>> GetAppraisalById(int appraisalId);
 
         ApiResponse<List<GetAppraisalResponse_DTO>> GetAppraisal(int employeeId);
     }

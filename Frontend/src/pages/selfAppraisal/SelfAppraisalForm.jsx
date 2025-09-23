@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import CardWrapper from "../../Component/CardWrapper";
 import axios from "axios";
 import { FaDownload } from "react-icons/fa";
+import Swal from "sweetalert2";
 
 const SelfAppraisalForm = () => {
     const navigate = useNavigate();
@@ -11,12 +12,14 @@ const SelfAppraisalForm = () => {
     const isViewMode = !!viewMode;
 
     const [userRole] = useState(localStorage.getItem("role") || "employee");
-    const [formdata, setFormData] = useState([]);
+    const [formData, setFormData] = useState([]);
     const [templateId, setTemplateId] = useState(appraisalData?.templateId || null);
     const [overallAssociateComment, setOverallAssociateComment] = useState("");
     const [overallSupervisorComment, setOverallSupervisorComment] = useState("");
     const [totalScore, setTotalScore] = useState(0);
     const [totalWeightage, setTotalWeightage] = useState(0);
+    const [overallSupervisorScore, setOverallSupervisorScore] = useState(0);
+    const [finalRating, setFinalRating] = useState(appraisalData?.finalRating || ""); // NEW
 
     // Fetch template & KPI data
     const fetchForm = async () => {
@@ -25,7 +28,7 @@ const SelfAppraisalForm = () => {
             if (!departmentId) return;
 
             const res = await axios.get(
-                `https://localhost:7098/api/AppraisalForm/GetTemplateByDeptId?departmentId=${departmentId}&employeeId=${empId}&cycleId=${appraisalData.cycleId}`,
+                `https://localhost:7098/api/AppraisalForm/GetTemplateByDeptId?departmentId=${departmentId}&employeeId=${empId}&cycleId=${appraisalData?.cycleId}`,
                 { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
             );
 
@@ -35,6 +38,7 @@ const SelfAppraisalForm = () => {
                 setOverallAssociateComment(res.data.data.overallAssociateComment || "");
                 setOverallSupervisorComment(res.data.data.overallSupervisorComment || "");
                 if (!templateId && res.data.data.templateId) setTemplateId(res.data.data.templateId);
+                if (res.data.data.finalRating) setFinalRating(res.data.data.finalRating);
             } else setFormData([]);
         } catch (error) {
             console.error("Error fetching template:", error);
@@ -42,38 +46,52 @@ const SelfAppraisalForm = () => {
         }
     };
 
-    useEffect(() => { fetchForm(); }, []);
-    useEffect(() => { calculateTotalScore(); }, [formdata]);
+    useEffect(() => {
+        fetchForm();
+    }, []);
 
-    const calculateTotalScore = () => {
-        const totalWeightedScore = formdata.reduce(
-            (sum, item) => sum + ((item.agileScore / 5) * item.kpiWeightage),
-            0
-        );
-        const totalWeight = formdata.reduce((sum, item) => sum + item.kpiWeightage, 0);
+    // Recalculate overall scores whenever formData changes
+    useEffect(() => {
+        const totalWeight = formData.reduce((sum, item) => sum + (item.kpiWeightage || 0), 0);
+
+        const totalWeightedScore = formData.reduce((sum, item) => {
+            if (userRole === "manager" || userRole === "supervisor") {
+                return sum + ((item.supervisorScore || 0) / 5) * (item.kpiWeightage || 0);
+            } else {
+                return sum + ((item.agileScore || 0) / 5) * (item.kpiWeightage || 0);
+            }
+        }, 0);
+
+        const totalSupervisor = formData.reduce((sum, item) => sum + (item.supervisorScore || 0), 0);
+
         setTotalWeightage(totalWeight);
         setTotalScore(totalWeightedScore);
-    };
+        setOverallSupervisorScore(totalSupervisor);
+    }, [formData, userRole]);
 
     const handleScoreChange = (kpiId, value, type = "agile") => {
         if (isViewMode) return;
         const numericValue = parseFloat(value) || 0;
         if (numericValue < 0 || numericValue > 5) return;
 
-        setFormData(formdata.map(item =>
-            item.kpiId === kpiId
-                ? { ...item, [type === "agile" ? "agileScore" : "supervisorScore"]: numericValue }
-                : item
-        ));
+        setFormData(prev =>
+            prev.map(item =>
+                item.kpiId === kpiId
+                    ? { ...item, [type === "agile" ? "agileScore" : "supervisorScore"]: numericValue }
+                    : item
+            )
+        );
     };
 
     const handleCommentChange = (kpiId, value, type = "associate") => {
         if (isViewMode) return;
-        setFormData(formdata.map(item =>
-            item.kpiId === kpiId
-                ? { ...item, [type === "associate" ? "associateComment" : "supervisorComment"]: value }
-                : item
-        ));
+        setFormData(prev =>
+            prev.map(item =>
+                item.kpiId === kpiId
+                    ? { ...item, [type === "associate" ? "associateComment" : "supervisorComment"]: value }
+                    : item
+            )
+        );
     };
 
     const getScorePercentage = () => (totalWeightage > 0 ? ((totalScore / totalWeightage) * 100).toFixed(2) : 0);
@@ -86,11 +104,11 @@ const SelfAppraisalForm = () => {
         return { grade: "D", color: "danger" };
     };
 
-    // ---------------- CSV Export ----------------
+    // CSV export
     const downloadCSV = () => {
-        if (!formdata.length) return;
+        if (!formData.length) return;
         const headers = ["KPI ID", "KPI Title", "Description", "Weightage", "Agile Score", "Supervisor Score", "Associate Comment", "Supervisor Comment"];
-        const rows = formdata.map(item => [
+        const rows = formData.map(item => [
             item.kpiId,
             `"${item.kpiTitle}"`,
             `"${item.kpiDescription}"`,
@@ -111,15 +129,35 @@ const SelfAppraisalForm = () => {
         document.body.removeChild(link);
     };
 
+    // Submit
     const handleSubmit = async () => {
         if (isViewMode) return;
+
+        const result = await Swal.fire({
+            title: "Are you sure?",
+            text: "Do you want to submit this appraisal?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Yes, submit",
+            cancelButtonText: "Cancel"
+        });
+
+        if (!result.isConfirmed) return;
 
         try {
             const employeeId = appraisalData?.employeeId || parseInt(localStorage.getItem("employeeId"));
             const cycleId = appraisalData?.cycleId;
-            if (!employeeId || !cycleId) return alert("Employee or cycle data is missing.");
 
-            const kpiResponses = formdata.map(item => ({
+            if (!employeeId || !cycleId) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Missing Data",
+                    text: "Employee or cycle data is missing."
+                });
+                return;
+            }
+
+            const kpiResponses = formData.map(item => ({
                 responseId: item.responseId,
                 kpiId: item.kpiId,
                 selfScore: item.agileScore || 0,
@@ -132,9 +170,9 @@ const SelfAppraisalForm = () => {
                 employeeId,
                 cycleId,
                 templateId,
-                overallSelfScore: totalScore.toFixed(2),
-                overallSupervisorScore: formdata.reduce((sum, i) => sum + (i.supervisorScore || 0), 0).toFixed(2),
-                finalRating: "",
+                overallSelfScore: formData.reduce((sum, i) => sum + (i.agileScore || 0), 0).toFixed(2),
+                overallSupervisorScore: overallSupervisorScore.toFixed(2),
+                finalRating, // <--- INCLUDED
                 status: appraisalId ? "Completed" : "Submitted",
                 createdBy: parseInt(localStorage.getItem("employeeId")),
                 kpiResponses,
@@ -142,30 +180,31 @@ const SelfAppraisalForm = () => {
                 overallSupervisorComment
             };
 
-            let res;
-            if (appraisalId) {
-                res = await axios.put(
-                    `https://localhost:7098/api/Appraisal/UpdateAppraisal?appraisalId=${appraisalId}`,
-                    payload,
-                    { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-                );
-            } else {
-                res = await axios.post(
-                    "https://localhost:7098/api/Appraisal/SubmitSelfAppraisal",
-                    payload,
-                    { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-                );
-            }
+            const res = appraisalId
+                ? await axios.put(`https://localhost:7098/api/Appraisal/UpdateAppraisal?appraisalId=${appraisalId}`, payload, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
+                : await axios.post("https://localhost:7098/api/Appraisal/SubmitSelfAppraisal", payload, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
 
             if (res.data?.statusCode === 200) {
-                alert("Appraisal submitted successfully!");
-                navigate("/self-appraisal-list");
+                Swal.fire({
+                    icon: "success",
+                    title: "Success!",
+                    text: "Appraisal submitted successfully!",
+                    confirmButtonText: "OK"
+                }).then(() => navigate("/self-appraisal-list"));
             } else {
-                alert("Failed to submit appraisal: " + res.data?.message);
+                Swal.fire({
+                    icon: "error",
+                    title: "Submission Failed",
+                    text: res.data?.message || "Something went wrong while submitting appraisal."
+                });
             }
         } catch (error) {
             console.error("Error submitting appraisal:", error.response?.data || error);
-            alert(error.response?.data?.message || "Something went wrong while submitting appraisal.");
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: error.response?.data?.message || "Something went wrong while submitting appraisal."
+            });
         }
     };
 
@@ -202,7 +241,7 @@ const SelfAppraisalForm = () => {
                     >
                         {/* Score Summary */}
                         <div className="row mb-4">
-                            <div className="col-md-12">
+                            <div className="col-md-6 mb-3">
                                 <div className={`card border-${scoreGrade.color}`}>
                                     <div className={`card-body text-center text-${scoreGrade.color}`}>
                                         <h5 className="card-title">Overall Score</h5>
@@ -212,7 +251,45 @@ const SelfAppraisalForm = () => {
                                     </div>
                                 </div>
                             </div>
+                            <div className="col-md-6 mb-3">
+                                <div className="card border-info">
+                                    <div className="card-body text-center text-info">
+                                        <h5 className="card-title">Overall Supervisor Score</h5>
+                                        <h2 className="mb-0">{overallSupervisorScore.toFixed(2)}</h2>
+                                        <small className="text-muted">Out of {formData.length * 5}</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
+                        {/* Final Rating - Manager/Supervisor only */}
+                        {(userRole === "manager" || userRole === "supervisor") && (
+                            <div className="row mb-4">
+                                <div className="col-md-6">
+                                    <div className="card">
+                                        <div className="card-header bg-light">
+                                            <h6>Final Rating</h6>
+                                        </div>
+                                        <div className="card-body">
+                                            <select
+                                                className="form-select"
+                                                value={finalRating}
+                                                onChange={(e) => setFinalRating(e.target.value)}
+                                                disabled={isViewMode}
+                                            >
+                                                <option value="">-- Select Final Rating --</option>
+                                                <option value="E">E (Excellent)</option>
+                                                <option value="EE">EE (Exceeds Expectations)</option>
+                                                <option value="ME">ME (Meets Expectations)</option>
+                                                <option value="MEWE">MEWE (Meets Expectations with some Exceptions)</option>
+                                                <option value="NME">NME (Not Meeting Expectations)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
 
                         {/* KPI Table */}
                         <div className="table-responsive">
@@ -230,23 +307,49 @@ const SelfAppraisalForm = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {formdata.map((item, index) => (
+                                    {formData.map((item, index) => (
                                         <tr key={index}>
-                                            <td className="text-center"><span className="badge bg-info bg-opacity-10 text-info">{item.kpiId}</span></td>
-                                            <td><span className="fw-medium">{item.kpiTitle}</span></td>
-                                            <td><small className="text-muted">{item.kpiDescription}</small></td>
-                                            <td className="text-center"><span className="badge bg-info bg-opacity-10 text-info">{item.kpiWeightage}%</span></td>
+                                            <td className="text-center">{item.kpiId}</td>
+                                            <td>{item.kpiTitle}</td>
+                                            <td>{item.kpiDescription}</td>
+                                            <td className="text-center">{item.kpiWeightage}%</td>
                                             <td className="text-center">
-                                                <input type="number" className="form-control form-control-sm" min="0" max="5" step="0.01" value={item.agileScore} onChange={(e) => handleScoreChange(item.kpiId, e.target.value, "agile")} placeholder="0.00" readOnly={isViewMode} />
+                                                <input
+                                                    type="number"
+                                                    className="form-control form-control-sm"
+                                                    min="0" max="5" step="0.01"
+                                                    value={item.agileScore || 0}
+                                                    onChange={(e) => handleScoreChange(item.kpiId, e.target.value, "agile")}
+                                                    readOnly={isViewMode || userRole === "manager" || userRole === "supervisor"}
+                                                />
                                             </td>
                                             <td className="text-center">
-                                                <input type="number" className="form-control form-control-sm" min="0" max="5" step="0.01" value={item.supervisorScore} onChange={(e) => handleScoreChange(item.kpiId, e.target.value, "supervisor")} placeholder="0.00" disabled={isViewMode || (userRole !== "supervisor" && userRole !== "manager")} />
+                                                <input
+                                                    type="number"
+                                                    className="form-control form-control-sm"
+                                                    min="0" max="5" step="0.01"
+                                                    value={item.supervisorScore || 0}
+                                                    onChange={(e) => handleScoreChange(item.kpiId, e.target.value, "supervisor")}
+                                                    disabled={isViewMode || !(userRole === "manager" || userRole === "supervisor")}
+                                                />
                                             </td>
                                             <td>
-                                                <textarea className="form-control form-control-sm" rows="2" value={item.associateComment ?? ""} onChange={(e) => handleCommentChange(item.kpiId, e.target.value, "associate")} readOnly={isViewMode} />
+                                                <textarea
+                                                    className="form-control form-control-sm"
+                                                    rows="2"
+                                                    value={item.associateComment || ""}
+                                                    onChange={(e) => handleCommentChange(item.kpiId, e.target.value, "associate")}
+                                                    readOnly={isViewMode || userRole === "manager" || userRole === "supervisor"}
+                                                />
                                             </td>
                                             <td>
-                                                <textarea className="form-control form-control-sm" rows="2" value={item.supervisorComment ?? ""} onChange={(e) => handleCommentChange(item.kpiId, e.target.value, "supervisor")} disabled={isViewMode || (userRole !== "supervisor" && userRole !== "manager")} />
+                                                <textarea
+                                                    className="form-control form-control-sm"
+                                                    rows="2"
+                                                    value={item.supervisorComment || ""}
+                                                    onChange={(e) => handleCommentChange(item.kpiId, e.target.value, "supervisor")}
+                                                    disabled={isViewMode || !(userRole === "manager" || userRole === "supervisor")}
+                                                />
                                             </td>
                                         </tr>
                                     ))}
@@ -254,29 +357,43 @@ const SelfAppraisalForm = () => {
                             </table>
                         </div>
 
-                        {/* Overall Comments */}
+                        {/* Overall Comments & Final Rating */}
                         <div className="row mt-4">
                             <div className="col-md-6">
                                 <div className="card">
                                     <div className="card-header bg-light">
-                                        <h6 className="mb-0"><i className="bi bi-chat-square-text me-2"></i>Overall Associate Comments</h6>
+                                        <h6>Overall Associate Comments</h6>
                                     </div>
                                     <div className="card-body">
-                                        <textarea className="form-control" rows="4" value={overallAssociateComment} onChange={(e) => setOverallAssociateComment(e.target.value)} readOnly={isViewMode} />
+                                        <textarea
+                                            className="form-control"
+                                            rows="4"
+                                            value={overallAssociateComment}
+                                            onChange={(e) => setOverallAssociateComment(e.target.value)}
+                                            readOnly={isViewMode || userRole === "manager" || userRole === "supervisor"}
+                                        />
                                     </div>
                                 </div>
                             </div>
                             <div className="col-md-6">
                                 <div className="card">
                                     <div className="card-header bg-light">
-                                        <h6 className="mb-0"><i className="bi bi-person-check me-2"></i>Overall Supervisor Comments</h6>
+                                        <h6>Overall Supervisor Comments</h6>
                                     </div>
                                     <div className="card-body">
-                                        <textarea className="form-control" rows="4" value={overallSupervisorComment} onChange={(e) => setOverallSupervisorComment(e.target.value)} disabled={isViewMode || (userRole !== "supervisor" && userRole !== "manager")} />
+                                        <textarea
+                                            className="form-control"
+                                            rows="4"
+                                            value={overallSupervisorComment}
+                                            onChange={(e) => setOverallSupervisorComment(e.target.value)}
+                                            disabled={isViewMode || !(userRole === "manager" || userRole === "supervisor")}
+                                        />
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+
                     </CardWrapper>
                 </div>
             </div>

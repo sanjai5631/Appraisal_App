@@ -258,7 +258,7 @@ const AddEmployee = () => {
                   <Form.Group>
                     <Form.Label>Phone</Form.Label>
                     <Form.Control
-                      type="text"
+                      type="number"
                       {...formik.getFieldProps("phone")}
                     />
                   </Form.Group>
@@ -352,7 +352,7 @@ const AddEmployee = () => {
                     />
                   </Form.Group>
                 </Col>
-                <Col md={4}>
+                <Col md={4}>  
                   <Form.Group>
                     <Form.Label>Unit *</Form.Label>
                     <Form.Select

@@ -3,12 +3,12 @@ import axios from "axios";
 import { PencilSquare, Eye } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
 import CardWrapper from "../../Component/CardWrapper";
-import DataTable from "react-data-table-component"; 
+import DataTable from "react-data-table-component";
+import Swal from "sweetalert2";
 
 const UnitAppraisal = () => {
     const [appraisals, setAppraisals] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
     const navigate = useNavigate();
 
     const employeeId = localStorage.getItem("employeeId");
@@ -17,15 +17,19 @@ const UnitAppraisal = () => {
     useEffect(() => {
         if (employeeId) fetchAppraisals();
         else {
-            setError("Employee not found. Please login again.");
             setLoading(false);
+            Swal.fire({
+                icon: "error",
+                title: "Employee Not Found",
+                text: "Please login again.",
+            });
         }
     }, [employeeId]);
 
     const fetchAppraisals = async () => {
         try {
             const res = await axios.get(
-                `https://localhost:7098/api/SelfAppraisal/GetEmployeeByIId?employeeId=${employeeId}`,
+                `https://localhost:7098/api/SelfAppraisal/GetEmployeeById?employeeId=${employeeId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -35,24 +39,42 @@ const UnitAppraisal = () => {
                     ? [res.data.data]
                     : [];
 
-            if (data.length === 0) setError("No appraisals found for this employee.");
+            if (data.length === 0) {
+                Swal.fire({
+                    icon: "info",
+                    title: "No Appraisals",
+                    text: "No appraisals found for this employee.",
+                });
+            }
+
             setAppraisals(data);
         } catch (err) {
             console.error(err);
-            setError(
-                err.response?.status === 401
-                    ? "Unauthorized. Please login again."
-                    : err.response?.status === 404
-                        ? "API not found. Check your backend route."
-                        : "Failed to fetch employee appraisals."
-            );
+            Swal.fire({
+                icon: "error",
+                title: "Failed to fetch",
+                text:
+                    err.response?.status === 401
+                        ? "Unauthorized. Please login again."
+                        : err.response?.status === 404
+                            ? "API not found. Check your backend route."
+                            : "Failed to fetch employee appraisals.",
+            });
         } finally {
             setLoading(false);
         }
     };
 
     const downloadCSV = (data) => {
-        if (!data?.length) return;
+        if (!data?.length) {
+            Swal.fire({
+                icon: "info",
+                title: "No Data",
+                text: "There is no appraisal data to export.",
+            });
+            return;
+        }
+
         const headers = ["Emp Code", "Employee Name", "Cycle", "Financial Year", "Status", "Overall Score"];
         const rows = data.map((row) => [
             row.empCode || "",
@@ -71,18 +93,24 @@ const UnitAppraisal = () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        Swal.fire({
+            icon: "success",
+            title: "CSV Downloaded",
+            timer: 1500,
+            showConfirmButton: false,
+        });
     };
 
-    const handleReview = async (appraisal) => {
-            navigate("/manager-review", { state: { appraisalData: appraisal, empId: appraisal.employeeId,appraisalId:appraisal.appraisalId} });
-        } 
+    const handleReview = (appraisal) => {
+        navigate("/manager-review", { state: { appraisalData: appraisal, empId: appraisal.employeeId, appraisalId: appraisal.appraisalId } });
+    }
+
     const handleView = (appraisal) => {
         navigate("/dashboard/self-appraisal-form", {
             state: { appraisalData: appraisal, viewMode: true }
         });
     };
 
-    // DataTable columns with icon-only actions (no hover)
     const columns = [
         {
             name: "Actions",
@@ -110,8 +138,8 @@ const UnitAppraisal = () => {
         { name: "Employee Name", selector: row => row.employeeName || "N/A", sortable: true },
         { name: "Cycle", selector: row => row.cycleName || "N/A", sortable: true },
         { name: "Financial Year", selector: row => row.financialYear || "N/A", sortable: true },
-        { 
-            name: "Status", 
+        {
+            name: "Status",
             selector: row => row.status || "Pending",
             cell: row => (
                 <span className={`badge ${row.status === "Completed" ? "bg-success bg-opacity-10 text-success" : "bg-warning bg-opacity-10 text-warning"}`}>
@@ -148,18 +176,7 @@ const UnitAppraisal = () => {
                             </div>
                         }
                     >
-                        {error ? (
-                            <div className="text-center py-5 text-muted">
-                                <i className="bi bi-exclamation-circle display-1 mb-3"></i>
-                                <h5>{error}</h5>
-                            </div>
-                        ) : appraisals.length === 0 ? (
-                            <div className="text-center py-5 text-muted">
-                                <i className="bi bi-journal-text display-1 mb-3"></i>
-                                <h5>No Appraisals Found</h5>
-                                <p>There are currently no appraisal records available.</p>
-                            </div>
-                        ) : (
+                        {appraisals.length > 0 ? (
                             <DataTable
                                 columns={columns}
                                 data={appraisals}
@@ -167,6 +184,12 @@ const UnitAppraisal = () => {
                                 highlightOnHover
                                 dense
                             />
+                        ) : loading ? null : (
+                            <div className="text-center py-5 text-muted">
+                                <i className="bi bi-journal-text display-1 mb-3"></i>
+                                <h5>No Appraisals Found</h5>
+                                <p>There are currently no appraisal records available.</p>
+                            </div>
                         )}
                     </CardWrapper>
                 </div>

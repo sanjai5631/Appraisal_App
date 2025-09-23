@@ -1,6 +1,8 @@
 ﻿using EAA.Application;
 using EAA.Domain.DTO.Request.Employee;
+using EAA.Domain.DTO.Request.GetAllAppraisal;
 using EAA.Domain.DTO.Request.SelfAppraisal;
+using EAA.Domain.DTO.Response.Appraisal;
 using EAA.Domain.DTO.Response.Employee;
 using EAA.Domain.DTO.Response.SelfAppraisal;
 using EAA.Domain.DTO.Response.User;
@@ -23,6 +25,88 @@ namespace EAA.Infrastructure.Logic.SelfAppraisal
             _context = context;
             _error = error;
         }
+
+        public List<GetAppraisalDetailResponse_DTO> GetAllAppraisal()
+        {
+            try
+            {
+                var appraisals = _context.TblAppraisals
+                    .Include(a => a.Employee)
+                        .ThenInclude(e => e.Unit)
+                    .Include(a => a.Cycle)
+                    .Include(a => a.TblAppraisalResponses)
+                        .ThenInclude(r => r.Kpi)
+                    .Select(a => new GetAppraisalDetailResponse_DTO
+                    {
+                        AppraisalId = a.AppraisalId,
+                        EmployeeName = a.Employee != null ? a.Employee.Name : string.Empty,
+                        UnitName = a.Employee != null && a.Employee.Unit != null ? a.Employee.Unit.UnitName : string.Empty,
+                        CycleName = a.Cycle != null ? a.Cycle.CycleName : string.Empty,
+                        Status = a.Status != null ? a.Status : "Start",
+                        FinalRating = a.FinalRating != null ? a.FinalRating : string.Empty,
+                        OverallSelfScore = a.OverallSelfScore,
+                        OverallSupervisorScore = a.OverallSupervisorScore,
+                        OverallAssociateComment = a.OverallAssociateComment != null ? a.OverallAssociateComment : string.Empty,
+                        OverallSupervisorComment = a.OverallSupervisorComment != null ? a.OverallSupervisorComment : string.Empty,
+                        KpiResponses = a.TblAppraisalResponses.Select(r => new KpiResponse_DTO
+                        {
+                            KpiId = r.KpiId ?? 0,
+                            KpiName = r.Kpi != null ? r.Kpi.Title : string.Empty,
+                            SelfScore = r.SelfScore,
+                            SupervisorScore = r.SupervisorScore,
+                            AssociateComment = r.AssociateComment != null ? r.AssociateComment : string.Empty,
+                            SupervisorComment = r.SupervisorComment != null ? r.SupervisorComment : string.Empty
+                        }).ToList()
+                    })
+                    .ToList();
+
+                return appraisals;
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, "Error in SelfAppraisal_Infrastructure -> GetAllAppraisal");
+                return new List<GetAppraisalDetailResponse_DTO>();
+            }
+        }
+
+        public List<GetAppraisalResponse_DTO> GetAppraisal(int employeeId)
+        {
+            try
+            {
+                var unitId = _context.TblEmployees
+                    .Where(a => a.EmployeeId == employeeId)
+                    .FirstOrDefault().UnitId;
+
+                return _context.TblAppraisals
+                    .Include(a => a.Employee)       // TblEmployee
+                    .Where(a => a.Employee.UnitId == unitId)
+                    .Include(a => a.Cycle)
+                    .ThenInclude(c => c.Financialyear).Select
+                    (appraisal => new GetAppraisalResponse_DTO
+                    {
+                        AppraisalId = appraisal.AppraisalId,
+                        EmployeeId = appraisal.EmployeeId ?? 0,
+                        EmpCode = appraisal.Employee.EmpCode,
+                        EmployeeName = appraisal.Employee.Name,
+                        CycleId = appraisal.CycleId,
+                        CycleName = appraisal.Cycle.CycleName,
+                        FinancialYear = appraisal.Cycle.Financialyear.Yearname ?? string.Empty,
+                        Status = appraisal.Status,
+                        OverallSelfScore = appraisal.OverallSelfScore,
+                        OverallAssociateComment = appraisal.OverallAssociateComment,
+                        OverallSupervisorScore = appraisal.OverallSupervisorScore,
+                        OverallSupervisorComment = appraisal.OverallSupervisorComment,
+                        FinalRating = appraisal.FinalRating
+                    }).ToList();
+
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, "Error in GetAppraisal");
+                return null;
+            }
+        }
+
 
         // Get all self-appraisal cycles with linked financial year
         public List<SelfAppraisalResponse_DTO> GetAllSelfAppraisal(int employeeId)
@@ -64,65 +148,48 @@ namespace EAA.Infrastructure.Logic.SelfAppraisal
             }
         }
 
-
-
-        public List<GetAppraisalResponse_DTO >GetAppraisal(int employeeId)
+        public List<GetAppraisalDetailResponse_DTO> GetAppraisalById(int appraisalId)
         {
             try
             {
-                var unitId = _context.TblEmployees
-                    .Where(a => a.EmployeeId == employeeId)
-                    .FirstOrDefault().UnitId;
-
-                return _context.TblAppraisals
-                    .Include(a => a.Employee)       // TblEmployee
-                    .Where(a => a.Employee.UnitId == unitId)
+                var appraisal = _context.TblAppraisals
+                    .Include(a => a.Employee)
+                        .ThenInclude(e => e.Unit)
                     .Include(a => a.Cycle)
-                    .ThenInclude(c => c.Financialyear).Select
-                    (appraisal =>   new GetAppraisalResponse_DTO
+                    .Include(a => a.TblAppraisalResponses)
+                        .ThenInclude(r => r.Kpi)
+                    .Where(a => a.AppraisalId == appraisalId)
+                    .Select(a => new GetAppraisalDetailResponse_DTO
                     {
-                        AppraisalId = appraisal.AppraisalId,
-                        EmployeeId = appraisal.EmployeeId ?? 0,
-                        EmpCode = appraisal.Employee.EmpCode,
-                        EmployeeName = appraisal.Employee.Name,
-                        CycleId = appraisal.CycleId,
-                        CycleName = appraisal.Cycle.CycleName,
-                        FinancialYear = appraisal.Cycle.Financialyear.Yearname ?? string.Empty,
-                        Status = appraisal.Status,
-                        OverallSelfScore = appraisal.OverallSelfScore,
-                        OverallAssociateComment = appraisal.OverallAssociateComment,
-                        OverallSupervisorScore = appraisal.OverallSupervisorScore,
-                        OverallSupervisorComment = appraisal.OverallSupervisorComment,
-                        FinalRating = appraisal.FinalRating
-                    }).ToList();
-               
+                        AppraisalId = a.AppraisalId,
+                        EmployeeName = a.Employee != null ? a.Employee.Name : string.Empty,
+                        UnitName = a.Employee != null && a.Employee.Unit != null ? a.Employee.Unit.UnitName : string.Empty,
+                        CycleName = a.Cycle != null ? a.Cycle.CycleName : string.Empty,
+                        Status = a.Status != null ? a.Status : "Start",
+                        FinalRating = a.FinalRating != null ? a.FinalRating : string.Empty,
+                        OverallSelfScore = a.OverallSelfScore,
+                        OverallSupervisorScore = a.OverallSupervisorScore,
+                        OverallAssociateComment = a.OverallAssociateComment != null ? a.OverallAssociateComment : string.Empty,
+                        OverallSupervisorComment = a.OverallSupervisorComment != null ? a.OverallSupervisorComment : string.Empty,
+                        KpiResponses = a.TblAppraisalResponses.Select(r => new KpiResponse_DTO
+                        {
+                            KpiId = r.KpiId ?? 0,
+                            KpiName = r.Kpi != null ? r.Kpi.Title : string.Empty,
+                            SelfScore = r.SelfScore,
+                            SupervisorScore = r.SupervisorScore,
+                            AssociateComment = r.AssociateComment != null ? r.AssociateComment : string.Empty,
+                            SupervisorComment = r.SupervisorComment != null ? r.SupervisorComment : string.Empty
+                        }).ToList()
+                    })
+                    .ToList();
+
+                return appraisal;
             }
             catch (Exception ex)
             {
-                _error.Capture(ex, "Error in GetAppraisal");
-                return null;
+                _error.Capture(ex, "Error in SelfAppraisal_Infrastructure -> GetAppraisalById");
+                return new List<GetAppraisalDetailResponse_DTO>();
             }
-        }
-
-        public List<EmployeeByUnitResponseDTO> GetEmployeesByUnit(EmployeesByUnitRequestDTO request)
-        {
-            var query = _context.TblEmployees
-                .Where(e => e.UnitId == request.UnitId);
-
-            var employees = query
-                .Select(e => new EmployeeByUnitResponseDTO
-                {
-                    EmployeeId = e.EmployeeId,
-                    EmployeeName = e.Name,
-                    EmployeeCode = e.EmpCode,
-                    Email = e.Email,
-                    Role = e.Role != null ? e.Role.RoleName : "",
-                    DepartmentName = e.Dept != null ? e.Dept.DeptName : "",
-                    UnitName = e.Unit != null ? e.Unit.UnitName : ""
-                })
-                .ToList();
-
-            return employees;
         }
 
 

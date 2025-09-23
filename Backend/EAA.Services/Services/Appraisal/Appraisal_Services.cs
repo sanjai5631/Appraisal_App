@@ -98,13 +98,13 @@ namespace EAA.Services.Services.Appraisal
             }
             return response;
         }
-
+        //Update Appraisal
         public ApiResponse<bool> UpdateAppraisal(int appraisalId, AppraisalDTO request)
         {
             var response = new ApiResponse<bool>();
             try
             {
-                var result = _appraisalInfra.UpdateAppraisal(appraisalId, request); // Calls infrastructure layer
+                var result = _appraisalInfra.UpdateAppraisal(appraisalId, request); 
                 response.Data = result;
                 response.StatusCode = result ? 200 : 400;
                 response.Message = result ? "Appraisal updated successfully" : "Failed to update appraisal";

@@ -12,6 +12,8 @@ const FinancialYearDashboard = () => {
   const [showModal, setShowModal] = useState(false);
   const [editYear, setEditYear] = useState(null);
 
+  const token = localStorage.getItem("token"); // get token once
+
   useEffect(() => {
     fetchFinancialYears();
   }, []);
@@ -20,9 +22,11 @@ const FinancialYearDashboard = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        "https://localhost:7098/api/Financial/GetAllFinancialYears"
+        "https://localhost:7098/api/Financial/GetAllFinancialYears",
+        {
+          headers: { Authorization: `Bearer ${token}` }, // added auth header
+        }
       );
-      console.log("API response:", response.data);
 
       if (Array.isArray(response.data)) {
         setFinancialYears(response.data);
@@ -53,7 +57,10 @@ const FinancialYearDashboard = () => {
   const handleDelete = async (id) => {
     try {
       await axios.delete(
-        `https://localhost:7098/api/Financial/DeleteFinancialYear?financialYearId=${id}`
+        `https://localhost:7098/api/Financial/DeleteFinancialYear?financialYearId=${id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       Swal.fire("Deleted!", "Financial year deleted successfully", "success");
       fetchFinancialYears();
@@ -62,7 +69,6 @@ const FinancialYearDashboard = () => {
       Swal.fire("Error", "Failed to delete financial year", "error");
     }
   };
-
 
   return (
     <div className="container-fluid mt-5">

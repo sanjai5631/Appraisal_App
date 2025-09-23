@@ -2,6 +2,7 @@
 using EAA.Domain.DTO.Request.Template;
 using EAA.Domain.DTO.Response.Template;
 using EAA.Services.Services.AppraisalForm;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 
@@ -9,6 +10,7 @@ namespace EAA.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class AppraisalFormController : ControllerBase
     {
         private readonly IAppraisalForm_Services _appraisalFormService;

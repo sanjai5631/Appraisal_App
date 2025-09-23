@@ -54,18 +54,17 @@ const AddCycle = () => {
     setServerErrors({});
 
     if (!values.cycleName || !values.startDate || !values.endDate || !values.financialyearid) {
-      Swal.fire("Warning", "Please fill all required fields", "warning");
+      await Swal.fire("Warning", "Please fill all required fields", "warning");
       setSubmitting(false);
       return;
     }
 
-    // Correct payload with numbers
     const payload = {
       cycleName: values.cycleName,
       startDate: values.startDate,
       endDate: values.endDate,
       financialyearid: Number(values.financialyearid),
-      statusId: Number(values.statusId),
+      statusId: cycleData ? Number(values.statusId) : 1, 
       createdBy: Number(values.createdBy),
       modifiedBy: Number(values.modifiedBy),
     };
@@ -75,28 +74,27 @@ const AddCycle = () => {
         await axios.put(`${updateApiUrl}?CycleId=${cycleData.cycleId}`, payload, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        Swal.fire("Updated", "Cycle updated successfully", "success");
+        await Swal.fire("Updated", "Cycle updated successfully", "success"); // wait for alert
       } else {
         await axios.post(createApiUrl, payload, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        Swal.fire("Created", "Cycle created successfully", "success");
+        await Swal.fire("Created", "Cycle created successfully", "success"); // wait for alert
       }
-      navigate("/appraisal-cycles");
+      navigate("/appraisal-cycle"); // navigate after alert closes
     } catch (err) {
       console.error("Error saving cycle:", err.response?.data || err.message);
 
-      // Map backend validation errors
       const errors = {};
       if (err.response?.data?.errors) {
         Object.keys(err.response.data.errors).forEach((key) => {
-          const cleanKey = key.replace("request.", "").replace("$.", ""); // clean backend key
+          const cleanKey = key.replace("request.", "").replace("$.", "");
           errors[cleanKey] = err.response.data.errors[key][0];
         });
       }
       setServerErrors(errors);
       setSubmitting(false);
-      Swal.fire("Error", "Failed to save cycle", "error");
+      await Swal.fire("Error", "Failed to save cycle", "error");
     }
   };
 
@@ -132,9 +130,7 @@ const AddCycle = () => {
             <Formik initialValues={initialValues} onSubmit={handleSubmit}>
               {({ values, setFieldValue, handleChange, isSubmitting }) => (
                 <Form>
-                  {/* Cycle Selection & Financial Year */}
                   <Row className="mb-3">
-
                     <Col md={4}>
                       <label className="form-label fw-semibold">Financial Year *</label>
                       <select
@@ -176,29 +172,25 @@ const AddCycle = () => {
                       )}
                     </Col>
 
-                    <Col md={4}>
+                      <Col md={4}>
                       <label className="form-label fw-semibold">Status</label>
                       <select
                         className="form-select"
                         name="statusId"
                         value={values.statusId}
                         onChange={handleChange}
+                        disabled={!cycleData} // ✅ Disable dropdown if creating a new cycle
                       >
                         <option value={1}>Active</option>
-                        <option value={0}>Inactive</option>
+                        <option value={2}>Inactive</option>
                       </select>
                     </Col>
                   </Row>
 
-                  {/* Start Date & End Date */}
                   <Row className="mb-3">
                     <Col md={4}>
                       <label className="form-label fw-semibold">Publish Date *</label>
-                      <Field
-                        type="date"
-                        name="startDate"
-                        className="form-control"
-                      />
+                      <Field type="date" name="startDate" className="form-control" />
                       {serverErrors.startDate && (
                         <div className="text-danger small mt-1">{serverErrors.startDate}</div>
                       )}
@@ -206,24 +198,19 @@ const AddCycle = () => {
 
                     <Col md={4}>
                       <label className="form-label fw-semibold">Due Date *</label>
-                      <Field
-                        type="date"
-                        name="endDate"
-                        className="form-control"
-                      />
+                      <Field type="date" name="endDate" className="form-control" />
                       {serverErrors.endDate && (
                         <div className="text-danger small mt-1">{serverErrors.endDate}</div>
                       )}
                     </Col>
                   </Row>
 
-                  {/* Action Buttons */}
                   <div className="text-end mt-4">
                     <Button
                       type="button"
                       variant="outline-secondary"
                       className="me-3"
-                      onClick={() => navigate("/appraisal-cycles")}
+                      onClick={() => navigate("/appraisal-cycle")}
                     >
                       <i className="bi bi-x-circle me-1"></i>
                       Cancel

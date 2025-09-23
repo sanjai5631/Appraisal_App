@@ -10,7 +10,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import RequireAuth from "./Component/RequireAuth";
 import Navbar from "./Component/Navbar";
 import Login from "./Component/Login";
-import HRDashboard from "./pages/HRDashboard";
+import HRDashboard from "./pages/hr/HRDashboard";
 import ManagerDashboard from "./pages/manager/ManagerDashboard";
 import AddEmployee from "./pages/employee/AddEmployee";
 import ViewEmployees from "./pages/employee/ViewEmployees"; // <-- corrected import
@@ -21,7 +21,7 @@ import FinancialYearPage from "./pages/cycles/FinancialYear";
 import SelfAppraisalList from "./pages/selfAppraisal/selfAppraisalList";
 import SelfAppraisalForm from "./pages/selfAppraisal/SelfAppraisalForm";
 import UnitAppraisal from "./pages/manager/UnitAppraisal";
-import ViewReport from "./pages/employee/ViewReport";
+import ViewAppraisal from "./pages/hr/ViewAppraisal";
 
 
 function AppContent() {
@@ -46,6 +46,15 @@ function AppContent() {
           element={
             <RequireAuth allowedRoles={["hr"]}>
               <HRDashboard />
+            </RequireAuth>
+          }
+        />
+        {/*View all appraisal*/}
+        <Route
+          path="/hr/view-appraisal"
+          element={
+            <RequireAuth allowedRoles={["hr"]}>
+              <ViewAppraisal />
             </RequireAuth>
           }
         />
@@ -89,14 +98,6 @@ function AppContent() {
           element={
             <RequireAuth allowedRoles={["hr"]}>
               <FinancialYearPage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/view-Reports"
-          element={
-            <RequireAuth allowedRoles={["hr"]}>
-              <ViewReport />
             </RequireAuth>
           }
         />

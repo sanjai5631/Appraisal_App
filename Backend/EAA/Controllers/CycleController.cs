@@ -2,6 +2,7 @@
 using EAA.Domain.DTO.Request.Cycle;
 using EAA.Domain.DTO.Response.Cycle;
 using EAA.Services.Services.Cycle;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
@@ -10,6 +11,7 @@ namespace EAA.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CycleController : ControllerBase
     {
         private readonly ICycle_Services _cycleService;
