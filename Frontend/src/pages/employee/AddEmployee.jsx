@@ -106,6 +106,7 @@ const AddEmployee = () => {
         if (values.password) payload.Password = values.password;
 
         if (isUpdateMode) {
+          debugger
           await axios.put(
             `https://localhost:7098/api/Employee/UpdateEmployeeDetails?employeeId=${employeeId}`,
             payload,
@@ -258,7 +259,7 @@ const AddEmployee = () => {
                   <Form.Group>
                     <Form.Label>Phone</Form.Label>
                     <Form.Control
-                      type="number"
+                      type="text"
                       {...formik.getFieldProps("phone")}
                     />
                   </Form.Group>

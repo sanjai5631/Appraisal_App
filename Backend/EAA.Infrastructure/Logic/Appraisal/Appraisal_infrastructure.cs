@@ -155,6 +155,10 @@ namespace EAA.Infrastructure.Logic.Appraisal
                 appraisal.ModifiedBy = request.CreatedBy;
                 appraisal.OverallAssociateComment = request.OverallAssociateComment;      
                 appraisal.OverallSupervisorComment = request.OverallSupervisorComment;
+                appraisal.OverallSelfScore = request.OverallSelfScore;
+                appraisal.OverallSupervisorScore = request.OverallSupervisorScore;
+                appraisal.FinalRating = request.FinalRating;
+
 
                 // Remove old KPI responses
                 _context.TblAppraisalResponses.RemoveRange(appraisal.TblAppraisalResponses);
@@ -169,12 +173,15 @@ namespace EAA.Infrastructure.Logic.Appraisal
                     TemplateId = request.TemplateId,
                     Status = request.Status ?? "Pending",
                     OverallSelfScore = request.OverallSelfScore,
+                    OverallSupervisorScore = request.OverallSupervisorScore,
+                    FinalRating = request.FinalRating,
                     CreatedOn = DateTime.Now,
                     CreatedBy = request.CreatedBy,
-                    OverallAssociateComment = request.OverallAssociateComment,      
+                    OverallAssociateComment = request.OverallAssociateComment,
                     OverallSupervisorComment = request.OverallSupervisorComment,
                 };
                 _context.TblAppraisals.Add(appraisal);
+
             }
 
             // Add KPI responses

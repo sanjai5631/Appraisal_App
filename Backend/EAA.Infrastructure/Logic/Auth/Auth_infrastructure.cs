@@ -3,6 +3,8 @@ using EAA.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 
 namespace EAA.Infrastructure.Logic.Auth
 {
@@ -15,6 +17,45 @@ namespace EAA.Infrastructure.Logic.Auth
         {
             _context = context;
             _error = error;
+        }
+
+        public bool SendEmployeeNotification(string toEmail, string empCode, string password)
+        {
+            try
+            {
+                var fromAddress = new MailAddress("hr@yourcompany.com", "HR Team");
+                var toAddress = new MailAddress(toEmail);
+                const string fromPassword = "YourEmailPassword"; // Use secure way in production
+                string subject = "Your Employee Account Details";
+                string body = $"Welcome! \n\nYour employee account has been created.\n\n" +
+                              $"Employee Code: {empCode}\nPassword: {password}\n\n" +
+                              "Please login to the portal.";
+
+                var smtp = new SmtpClient
+                {
+                    Host = "smtp.yourmailserver.com",
+                    Port = 587,
+                    EnableSsl = true,
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    UseDefaultCredentials = false,
+                    Credentials = new NetworkCredential(fromAddress.Address, fromPassword)
+                };
+
+                using (var message = new MailMessage(fromAddress, toAddress)
+                {
+                    Subject = subject,
+                    Body = body
+                })
+                {
+                    smtp.Send(message);
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         public TblEmployee? ValidateUser(string empCode, string password)

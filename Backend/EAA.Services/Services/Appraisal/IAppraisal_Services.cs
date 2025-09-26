@@ -6,7 +6,7 @@ namespace EAA.Services.Services.Appraisal
 {
     public interface IAppraisal_Services
     {
-        ApiResponse<AppraisalResponseDTO> GetCurrentForm(int employeeId, int cycleId);
+        ApiResponse<AppraisalResponseDTO>GetCurrentForm(int employeeId, int cycleId);
         ApiResponse<bool> SubmitAppraisal(AppraisalDTO request);
         ApiResponse<bool> SubmitManagerReview(AppraisalDTO request, int managerId);
         ApiResponse<List<UnitAppraisalResponseDTO>> GetUnitAppraisals(int managerId, int? cycleId = null);

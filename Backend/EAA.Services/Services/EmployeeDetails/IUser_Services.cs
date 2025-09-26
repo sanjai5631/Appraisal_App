@@ -15,7 +15,7 @@ namespace EAA.Services.Services.EmployeeDetails
     {
         ApiResponse<List<EmployeeResponse_DTO>> GetAllEmployees();
         ApiResponse<EmployeeResponse_DTO> GetEmployeeById(int employeeId);
-        ApiResponse<EmployeeResponse_DTO> SaveEmployee(EmployeeRequest_DTO employeeRequest);
+        Task<ApiResponse <EmployeeResponse_DTO>> SaveEmployee(EmployeeRequest_DTO employeeRequest);
         ApiResponse<UpdateEmployeeResponse_DTO> UpdateEmployee(int employeeId, UpdateEmployeeRequest_DTO updateRequest);
         ApiResponse<string> DeleteEmployee(int employeeId);
     }

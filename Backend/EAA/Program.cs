@@ -1,4 +1,5 @@
 using EAA.Application;
+using EAA.Application.Input_DTO;
 using EAA.Domain.Models;
 using EAA.Infrastructure.Logic.Appraisal;
 using EAA.Infrastructure.Logic.AppraisalForm;
@@ -109,6 +110,10 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero 
     };
 });
+//email configure
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.AddTransient<IEmailService, EmailService>();
+
 
 // Add CORS
 builder.Services.AddCors(options =>

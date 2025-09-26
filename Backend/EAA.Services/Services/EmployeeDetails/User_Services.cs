@@ -11,11 +11,13 @@ namespace EAA.Services.Services.EmployeeDetails
     {
         private readonly IUser_infrastructure _user;
         private readonly ErrorHandler _error;
+        private readonly IEmailService _emailService;
 
-        public User_Services(IUser_infrastructure userInfrastructure, ErrorHandler errorHandler)
+        public User_Services(IUser_infrastructure userInfrastructure, ErrorHandler errorHandler,IEmailService emailService)
         {
             _user = userInfrastructure;
-            _error = errorHandler;
+            _error = errorHandler; 
+            _emailService = emailService;
         }
 
         public ApiResponse<List<EmployeeResponse_DTO>> GetAllEmployees()
@@ -74,12 +76,19 @@ namespace EAA.Services.Services.EmployeeDetails
             return response;
         }
 
-        public ApiResponse<EmployeeResponse_DTO> SaveEmployee(EmployeeRequest_DTO employeeRequest)
+        public async Task<ApiResponse<EmployeeResponse_DTO>> SaveEmployee(EmployeeRequest_DTO employeeRequest)
         {
             var response = new ApiResponse<EmployeeResponse_DTO>();
             try
             {
-                var employee = _user.SaveEmployee(employeeRequest); // already DTO
+                // Keep plain password for email
+                string plainPassword = employeeRequest.Password;
+
+                // Hash password for DB
+                employeeRequest.Password = PasswordHasher.HashPassword(employeeRequest.Password);
+
+                // Save employee in DB
+                var employee = _user.SaveEmployee(employeeRequest); // synchronous call
 
                 if (employee == null)
                 {
@@ -88,6 +97,19 @@ namespace EAA.Services.Services.EmployeeDetails
                 }
                 else
                 {
+                    // Send email with plain password (not the hashed one)
+                    await _emailService.SendEmailAsync(
+                        employee.Email,
+                        "Your Account Details",
+                        $@"
+                    <h1>Welcome to the Company!</h1>
+                    <p>Your account has been created successfully.</p>
+                    <p><strong>Employee Code:</strong> {employee.EmpCode}</p>
+                    <p><strong>Password:</strong> {plainPassword}</p>
+                    <p>Please change your password after first login.</p>
+                "
+                    );
+
                     response.StatusCode = 201;
                     response.Message = "Employee saved successfully";
                     response.Data = employee;
@@ -101,6 +123,7 @@ namespace EAA.Services.Services.EmployeeDetails
             }
             return response;
         }
+
 
         public ApiResponse<UpdateEmployeeResponse_DTO> UpdateEmployee(int employeeId, UpdateEmployeeRequest_DTO updateRequest)
         {

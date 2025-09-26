@@ -1,6 +1,7 @@
 ﻿using EAA.Application;
 using EAA.Domain.DTO.Request.Employee;
 using EAA.Domain.DTO.Request.GetAllAppraisal;
+using EAA.Domain.DTO.Request.SelfAppraisal;
 using EAA.Domain.DTO.Response.SelfAppraisal;
 using EAA.Infrastructure.Logic.SelfAppraisal;
 using EAA.Services.Services.SelfAppraisal;
@@ -147,6 +148,30 @@ namespace EAA.Controllers
                 _error.Capture(ex, $"SelfAppraisalController -> GetAppraial({employeeId})");
                 response.StatusCode = 500;
                 response.Message = "Failed to retrieve employee appraisal.";
+            }
+
+            return StatusCode(response.StatusCode, response);
+        }
+        // NEW: GET: api/SelfAppraisal/GetAppraisalByEmployeeAndCycle?employeeId=1&cycleId=2
+        [HttpGet("GetAppraisalByEmployeeAndCycle")]
+        public IActionResult GetAppraisalByEmployeeAndCycle(int employeeId, int cycleId)
+        {
+            var response = new ApiResponse<List<GetAppraisalByEmployeeCycleDTO>>();
+            try
+            {
+                response = _selfAppraisalService.GetAppraisalByEmployeeAndCycle(employeeId, cycleId);
+
+                if (response.Data == null || response.Data.Count == 0)
+                {
+                    response.StatusCode = 404;
+                    response.Message = $"No appraisals found for employee ID {employeeId} in cycle ID {cycleId}.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, $"SelfAppraisalController -> GetAppraisalByEmployeeAndCycle({employeeId}, {cycleId})");
+                response.StatusCode = 500;
+                response.Message = "Failed to retrieve appraisal.";
             }
 
             return StatusCode(response.StatusCode, response);

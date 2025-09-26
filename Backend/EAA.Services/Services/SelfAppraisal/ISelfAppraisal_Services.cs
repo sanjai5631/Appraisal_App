@@ -1,5 +1,6 @@
 ﻿using EAA.Application;
 using EAA.Domain.DTO.Request.GetAllAppraisal;
+using EAA.Domain.DTO.Request.SelfAppraisal;
 using EAA.Domain.DTO.Response.SelfAppraisal;
 using System;
 using System.Collections.Generic;
@@ -20,5 +21,7 @@ namespace EAA.Services.Services.SelfAppraisal
         ApiResponse<List<GetAppraisalDetailResponse_DTO>> GetAppraisalById(int appraisalId);
 
         ApiResponse<List<GetAppraisalResponse_DTO>> GetAppraisal(int employeeId);
+
+        ApiResponse<List<GetAppraisalByEmployeeCycleDTO>>GetAppraisalByEmployeeAndCycle(int employeeId, int cycleId);
     }
 }

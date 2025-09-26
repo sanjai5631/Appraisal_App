@@ -1,4 +1,3 @@
-
 import {
   BrowserRouter as Router,
   Routes,
@@ -13,7 +12,7 @@ import Login from "./Component/Login";
 import HRDashboard from "./pages/hr/HRDashboard";
 import ManagerDashboard from "./pages/manager/ManagerDashboard";
 import AddEmployee from "./pages/employee/AddEmployee";
-import ViewEmployees from "./pages/employee/ViewEmployees"; // <-- corrected import
+import ViewEmployees from "./pages/employee/ViewEmployees";
 import "bootstrap/dist/css/bootstrap.min.css";
 import AppraisalCycleForm from "./pages/cycles/AppraisalCycleForm";
 import AddCycle from "./pages/cycles/AddCycle";
@@ -22,7 +21,6 @@ import SelfAppraisalList from "./pages/selfAppraisal/selfAppraisalList";
 import SelfAppraisalForm from "./pages/selfAppraisal/SelfAppraisalForm";
 import UnitAppraisal from "./pages/manager/UnitAppraisal";
 import ViewAppraisal from "./pages/hr/ViewAppraisal";
-
 
 function AppContent() {
   const { isLoggedIn, role } = useAuth();
@@ -49,7 +47,6 @@ function AppContent() {
             </RequireAuth>
           }
         />
-        {/*View all appraisal*/}
         <Route
           path="/hr/view-appraisal"
           element={
@@ -58,8 +55,6 @@ function AppContent() {
             </RequireAuth>
           }
         />
-
-        {/* HR employee management */}
         <Route
           path="/create-employee"
           element={
@@ -76,7 +71,6 @@ function AppContent() {
             </RequireAuth>
           }
         />
-
         <Route
           path="/appraisal-cycle"
           element={
@@ -91,8 +85,8 @@ function AppContent() {
             <RequireAuth allowedRoles={["hr"]}>
               <AddCycle />
             </RequireAuth>
-          } />
-
+          }
+        />
         <Route
           path="/financial-year"
           element={
@@ -120,14 +114,6 @@ function AppContent() {
           }
         />
         <Route
-          path="/dashboard/unit-appraisal"
-          element={
-            <RequireAuth allowedRoles={["manager"]}>
-              <UnitAppraisal />
-            </RequireAuth>
-          }
-        />
-        <Route
           path="/manager-review"
           element={
             <RequireAuth allowedRoles={["manager"]}>
@@ -136,8 +122,7 @@ function AppContent() {
           }
         />
 
-        {/* Employee page */}
-
+        {/* Employee pages */}
         <Route
           path="/self-appraisal-list"
           element={
@@ -146,15 +131,14 @@ function AppContent() {
             </RequireAuth>
           }
         />
-
-        <Route
-          path="/self-appraisal-form"
-          element={
-            <RequireAuth allowedRoles={["employee"]}>
-              <SelfAppraisalForm />
-            </RequireAuth>
-          }
-        />
+       <Route
+            path="/self-appraisal-form"
+            element={
+              <RequireAuth allowedRoles={["employee","manager","hr"]}>
+                <SelfAppraisalForm />
+              </RequireAuth>
+            }
+          />
 
         {/* Default redirect after login */}
         <Route

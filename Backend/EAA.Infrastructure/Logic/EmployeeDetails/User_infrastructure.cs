@@ -326,5 +326,6 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
                 return $"Error deleting employee: {ex.Message}";
             }
         }
+
     }
 }

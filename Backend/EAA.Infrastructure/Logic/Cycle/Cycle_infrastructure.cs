@@ -146,17 +146,23 @@ namespace EAA.Infrastructure.Logic.Cycle
                     return null;
                 }
 
-                cycle.CycleName = !string.IsNullOrWhiteSpace(request.CycleName)
-                    ? request.CycleName
-                    : cycle.CycleName;
-
+                // Update basic fields
+                cycle.CycleName = !string.IsNullOrWhiteSpace(request.CycleName) ? request.CycleName : cycle.CycleName;
                 if (request.StartDate != default)
                     cycle.StartDate = DateOnly.FromDateTime(request.StartDate);
-
                 if (request.EndDate != default)
                     cycle.EndDate = DateOnly.FromDateTime(request.EndDate);
 
-                cycle.StatusId = request.StatusId ?? cycle.StatusId;
+                // Auto-update status based on EndDate
+                if (cycle.EndDate < DateOnly.FromDateTime(DateTime.Today))
+                {
+                    cycle.StatusId = 2; // Inactive
+                }
+                else
+                {
+                    cycle.StatusId = request.StatusId ?? cycle.StatusId;
+                }
+
                 cycle.Financialyearid = request.Financialyearid ?? cycle.Financialyearid;
                 cycle.ModifiedBy = request.ModifiedBy;
                 cycle.ModifiedOn = DateTime.Now;
@@ -183,6 +189,7 @@ namespace EAA.Infrastructure.Logic.Cycle
                 return null;
             }
         }
+
 
         // Delete cycle
         public string DeleteCycle(int cycleId)

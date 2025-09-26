@@ -66,22 +66,24 @@ namespace EAA.Controllers
         //Post
         [HttpPost]
         [Route("SaveEmployeeDetails")]
-        public IActionResult SaveEmployee([FromBody, Required] EmployeeRequest_DTO employeeRequest)
+        public async Task<IActionResult> SaveEmployee([FromBody] EmployeeRequest_DTO employeeRequest)
         {
             try
             {
                 var createdBy = User.FindFirstValue("EmployeeId");
                 employeeRequest.CreatedBy = Convert.ToInt32(createdBy);
-                employeeRequest.Password = PasswordHasher.HashPassword(employeeRequest.Password);
-                return Ok(_user.SaveEmployee(employeeRequest));
+            
+                var result = await _user.SaveEmployee(employeeRequest);
+                return Ok(result); 
             }
             catch (Exception ex)
             {
-
                 _error.Capture(ex, "Error In EmployeeController -> SaveEmployeeDetails");
                 return BadRequest(new { Message = "Failed to save employee details." });
             }
         }
+
+
         //Update
         [HttpPut]
         [Route("UpdateEmployeeDetails")]

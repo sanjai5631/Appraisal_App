@@ -10,6 +10,9 @@
         public List<TemplateKpiResponse_DTO> Kpis { get; set; } = new();
         public string? OverallAssociateComment { get; set; }
         public string? OverallSupervisorComment { get; set; }
+        public decimal OverallSelfScore { get; set; }
+        public decimal OverallSupervisorScore { get; set; }
+        public string FinalRating { get; set; }
     }
 
     // Response DTO for individual KPI in a template
@@ -19,8 +22,8 @@
         public string KpiTitle { get; set; } = null!;   
         public string KpiDescription { get; set; } = null!; 
         public decimal KpiWeightage { get; set; }         
-        public int AgileScore { get; set; }               
-        public int SupervisorScore { get; set; }          
+        public decimal AgileScore { get; set; }               
+        public decimal SupervisorScore { get; set; }          
         public string? AssociateComment { get; set; }    
         public string? SupervisorComment { get; set; }    
     }

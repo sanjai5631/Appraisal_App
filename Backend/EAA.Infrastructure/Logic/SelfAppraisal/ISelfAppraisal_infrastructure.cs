@@ -20,5 +20,7 @@ namespace EAA.Infrastructure.Logic.SelfAppraisal
         List<GetAppraisalDetailResponse_DTO> GetAppraisalById(int appraisalId);
         List<GetAppraisalResponse_DTO> GetAppraisal(int employeeId);
 
+        List<GetAppraisalByEmployeeCycleDTO> GetAppraisalByEmployeeAndCycle(int employeeId, int cycleId);
+
     }
 }

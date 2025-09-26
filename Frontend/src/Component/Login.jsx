@@ -15,42 +15,49 @@ function Login() {
   const formik = useFormik({
     initialValues: { empCode: "", password: "" },
     validationSchema: Yup.object({
-      empCode: Yup.string().required("Employee Code is required"),
-      password: Yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
+      empCode: Yup.string().trim().required("Employee Code is required"),
+      password: Yup.string().trim().required("Password is required"),
     }),
     onSubmit: async (values, { setSubmitting, setErrors }) => {
       try {
         const res = await axios.post("https://localhost:7098/api/Auth/Login", values);
 
-        // Store data in localStorage
+        // Save user info
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("name", res.data.name);
         localStorage.setItem("email", res.data.email);
         localStorage.setItem("empCode", res.data.empCode);
-        localStorage.setItem("role", res.data.role);
-        localStorage.setItem("deptId",res.data.deptId);
-        localStorage.setItem("employeeId",res.data.employeeId)
+        localStorage.setItem("role", res.data.role || "employee");
+        localStorage.setItem("deptId", res.data.deptId || 0);
+        localStorage.setItem("employeeId", res.data.employeeId);
 
-        // Update AuthContext
-        login();
+        login(); // Update auth context
 
-        // Redirect based on role
+        // Navigate based on role
         if (res.data.role === "hr") navigate("/dashboard/hr");
         else if (res.data.role === "manager") navigate("/dashboard/manager");
         else navigate("/employee");
       } catch (err) {
-        if (err.response?.status === 401) setErrors({ password: "Invalid employee code or password" });
-        else setErrors({ password: "Server error, please try again later" });
+        const backendError = err.response?.data;
+        if (backendError?.field && backendError?.message) {
+          setErrors({ [backendError.field]: backendError.message });
+        } else if (err.response?.status === 401) {
+          // Fallback if unauthorized
+          setErrors({ empCode: "Employee Code is invalid", password: "Password is incorrect" });
+        } else {
+          setErrors({ password: "Server error, try again later" });
+        }
       } finally {
         setSubmitting(false);
       }
     },
-    validateOnChange: true,
   });
 
   return (
     <div className="login-container">
-      <div className="login-side-img"><img src={loginImg} alt="Login" /></div>
+      <div className="login-side-img">
+        <img src={loginImg} alt="Login" />
+      </div>
       <div className="login-box">
         <h2>Login</h2>
         <form onSubmit={formik.handleSubmit}>
@@ -61,11 +68,12 @@ function Login() {
               name="empCode"
               value={formik.values.empCode}
               onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="Enter your employee code"
-              required
             />
             {formik.errors.empCode && <div className="error">{formik.errors.empCode}</div>}
           </div>
+
           <div className="input-group">
             <label>Password</label>
             <input
@@ -73,11 +81,12 @@ function Login() {
               name="password"
               value={formik.values.password}
               onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="Enter your password"
-              required
             />
             {formik.errors.password && <div className="error">{formik.errors.password}</div>}
           </div>
+
           <button type="submit" className="login-btn" disabled={formik.isSubmitting}>
             {formik.isSubmitting ? "Logging in..." : "Login"}
           </button>

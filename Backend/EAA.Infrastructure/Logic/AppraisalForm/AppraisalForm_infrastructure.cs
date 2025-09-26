@@ -201,8 +201,7 @@ namespace EAA.Infrastructure.Logic.AppraisalForm
                         .ThenInclude(tk => tk.Kpi)
                     .FirstOrDefault(t => t.DepartmentId == departmentId);
 
-                if (template == null)
-                    return null;
+                if (template == null) return null;
 
                 // Get appraisal for this employee + cycle + template
                 var appraisal = _context.TblAppraisals
@@ -219,19 +218,22 @@ namespace EAA.Infrastructure.Logic.AppraisalForm
 
                     return new TemplateKpiResponse_DTO
                     {
-                        
                         KpiId = tk.KpiId ?? 0,
                         KpiTitle = tk.Kpi?.Title ?? "",
                         KpiDescription = tk.Kpi?.Description ?? "",
                         KpiWeightage = tk.Weightage ?? 0,
-                        AgileScore = (int)(response?.SelfScore ?? 0),
-                        SupervisorScore = (int)(response?.SupervisorScore ?? 0m),
+                        AgileScore = response?.SelfScore ?? 0m,          // keep decimal
+                        SupervisorScore = response?.SupervisorScore ?? 0m,
                         AssociateComment = response?.AssociateComment ?? "",
                         SupervisorComment = response?.SupervisorComment ?? ""
                     };
                 }).ToList();
 
-                // Build DTO with overall comments
+                // Calculate overall scores
+                var overallSelfScore = kpiResponses.Sum(k => (k.AgileScore / 5m) * k.KpiWeightage);
+                var overallSupervisorScore = kpiResponses.Sum(k => (k.SupervisorScore / 5m) * k.KpiWeightage);
+
+                // Build DTO with overall comments and scores
                 return new TemplateResponse_DTO
                 {
                     TemplateId = template.TemplateId,
@@ -239,8 +241,11 @@ namespace EAA.Infrastructure.Logic.AppraisalForm
                     TemplateDescription = template.Description,
                     DepartmentName = template.Department?.DeptName ?? "",
                     Kpis = kpiResponses,
-                    OverallAssociateComment = appraisal?.OverallAssociateComment ?? "",    
-                    OverallSupervisorComment = appraisal?.OverallSupervisorComment ?? ""  
+                    OverallAssociateComment = appraisal?.OverallAssociateComment ?? "",
+                    OverallSupervisorComment = appraisal?.OverallSupervisorComment ?? "",
+                    OverallSelfScore = overallSelfScore,
+                    OverallSupervisorScore = overallSupervisorScore,
+                    FinalRating = appraisal?.FinalRating ?? ""
                 };
             }
             catch (Exception ex)
@@ -249,6 +254,7 @@ namespace EAA.Infrastructure.Logic.AppraisalForm
                 return null;
             }
         }
+
 
     }
 

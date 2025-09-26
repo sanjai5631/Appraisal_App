@@ -1,6 +1,6 @@
 // src/pages/cycles/AppraisalCycleForm.jsx
 import React, { useEffect, useState, useMemo } from "react";
-import { Button, Table, Form, Spinner } from "react-bootstrap";
+import { Button, Table, Form } from "react-bootstrap";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { FaEdit, FaTrash, FaPlus, FaDownload } from "react-icons/fa";
@@ -17,6 +17,7 @@ const AppraisalCyclePage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Fetch cycles
   const fetchCycles = async () => {
     setLoading(true);
     try {
@@ -33,6 +34,7 @@ const AppraisalCyclePage = () => {
     }
   };
 
+  // Fetch financial years
   const fetchFinancialYears = async () => {
     try {
       const res = await axios.get(`${financialApiUrl}/GetAllFinancialYears`, {
@@ -55,6 +57,7 @@ const AppraisalCyclePage = () => {
     fetchFinancialYears();
   }, []);
 
+  // Filter cycles by selected year
   const filteredCycles = useMemo(() => {
     if (!selectedYear) return cycles;
     return cycles.filter(
@@ -62,6 +65,7 @@ const AppraisalCyclePage = () => {
     );
   }, [cycles, selectedYear]);
 
+  // Delete cycle
   const handleDelete = async (id) => {
     const confirm = await Swal.fire({
       title: "Are you sure?",
@@ -85,7 +89,14 @@ const AppraisalCyclePage = () => {
     }
   };
 
-  // CSV Export function
+  // Determine status based on end date
+  const getCycleStatus = (cycle) => {
+    const today = new Date();
+    const endDate = new Date(cycle.endDate);
+    return today > endDate ? "Inactive" : "Active";
+  };
+
+  // CSV export
   const downloadCSV = (data) => {
     if (!data || !data.length) return;
 
@@ -99,16 +110,14 @@ const AppraisalCyclePage = () => {
         year ? year.yearName ?? year.yearname : "",
         c.startDate ? new Date(c.startDate).toLocaleDateString() : "",
         c.endDate ? new Date(c.endDate).toLocaleDateString() : "",
-        c.statusId === 1 ? "Active" : "Inactive"
+        getCycleStatus(c)
       ];
     });
 
     const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.href = url;
+    link.href = URL.createObjectURL(blob);
     link.setAttribute("download", "appraisal_cycles.csv");
     document.body.appendChild(link);
     link.click();
@@ -187,89 +196,49 @@ const AppraisalCyclePage = () => {
                 <table className="table table-hover align-middle">
                   <thead className="table-light">
                     <tr>
-                      <th scope="col" className="fw-semibold">
-                        <i className="bi bi-calendar-event me-1"></i>
-                        Cycle Name
-                      </th>
-                      <th scope="col" className="fw-semibold">
-                        <i className="bi bi-calendar-range me-1"></i>
-                        Financial Year
-                      </th>
-                      <th scope="col" className="fw-semibold">
-                        <i className="bi bi-calendar-check me-1"></i>
-                        Start Date
-                      </th>
-                      <th scope="col" className="fw-semibold">
-                        <i className="bi bi-calendar-x me-1"></i>
-                        End Date
-                      </th>
-                      <th scope="col" className="fw-semibold">
-                        <i className="bi bi-toggle-on me-1"></i>
-                        Status
-                      </th>
-                      <th scope="col" className="fw-semibold text-center">
-                        <i className="bi bi-gear me-1"></i>
-                        Actions
-                      </th>
+                      <th scope="col" className="fw-semibold"><i className="bi bi-calendar-event me-1"></i>Cycle Name</th>
+                      <th scope="col" className="fw-semibold"><i className="bi bi-calendar-range me-1"></i>Financial Year</th>
+                      <th scope="col" className="fw-semibold"><i className="bi bi-calendar-check me-1"></i>Start Date</th>
+                      <th scope="col" className="fw-semibold"><i className="bi bi-calendar-x me-1"></i>End Date</th>
+                      <th scope="col" className="fw-semibold"><i className="bi bi-toggle-on me-1"></i>Status</th>
+                      <th scope="col" className="fw-semibold text-center"><i className="bi bi-gear me-1"></i>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredCycles.map((c) => {
                       const year = financialYears.find(
-                        (fy) =>
-                          (fy.financialYearId ?? fy.financialyearid) ===
-                          (c.financialYearId ?? c.financialyearid)
+                        (fy) => (fy.financialYearId ?? fy.financialyearid) === (c.financialYearId ?? c.financialyearid)
                       );
                       return (
                         <tr key={c.cycleId}>
+                          <td><span className="fw-medium">{c.cycleName}</span></td>
+                          <td><span className="text-muted">{year ? year.yearName ?? year.yearname : "-"}</span></td>
+                          <td><span className="text-muted">{new Date(c.startDate).toLocaleDateString()}</span></td>
+                          <td><span className="text-muted">{new Date(c.endDate).toLocaleDateString()}</span></td>
                           <td>
-                            <span className="fw-medium">{c.cycleName}</span>
-                          </td>
-                          <td>
-                            <span className="text-muted">
-                              {year ? year.yearName ?? year.yearname : "-"}
-                            </span>
-                          </td>
-                          <td>
-                            <span className="text-muted">
-                              {new Date(c.startDate).toLocaleDateString()}
-                            </span>
-                          </td>
-                          <td>
-                            <span className="text-muted">
-                              {new Date(c.endDate).toLocaleDateString()}
-                            </span>
-                          </td>
-                          <td>
-                            <span
-                              className={`badge ${
-                                c.statusId === 1
-                                  ? "bg-success bg-opacity-10 text-success"
-                                  : "bg-warning bg-opacity-10 text-warning"
-                              }`}
-                            >
-                              {c.statusId === 1 ? "Active" : "Inactive"}
+                            <span className={`badge ${
+                              getCycleStatus(c) === "Active"
+                                ? "bg-success bg-opacity-10 text-success"
+                                : "bg-warning bg-opacity-10 text-warning"
+                            }`}>
+                              {getCycleStatus(c)}
                             </span>
                           </td>
                           <td className="text-center">
                             <div className="d-flex gap-2 justify-content-center">
                               <button
                                 className="btn btn-outline-warning btn-sm"
-                                onClick={() =>
-                                  navigate("/add-cycle", { state: { cycle: c } })
-                                }
+                                onClick={() => navigate("/add-cycle", { state: { cycle: c } })}
                                 title="Edit Cycle"
                               >
-                                <FaEdit className="me-1" />
-                                Edit
+                                <FaEdit className="me-1" /> Edit
                               </button>
                               <button
                                 className="btn btn-outline-danger btn-sm"
                                 onClick={() => handleDelete(c.cycleId)}
                                 title="Delete Cycle"
                               >
-                                <FaTrash className="me-1" />
-                                Delete
+                                <FaTrash className="me-1" /> Delete
                               </button>
                             </div>
                           </td>

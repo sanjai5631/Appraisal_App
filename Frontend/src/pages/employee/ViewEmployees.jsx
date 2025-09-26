@@ -10,6 +10,7 @@ function ViewEmployees() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState(""); // <-- new state for search
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -86,7 +87,6 @@ function ViewEmployees() {
     });
   };
 
-  // CSV Export function
   const downloadCSV = (data) => {
     if (!data || !data.length) return;
 
@@ -112,6 +112,14 @@ function ViewEmployees() {
     document.body.removeChild(link);
   };
 
+  // 🔹 Filter employees based on search
+  const filteredEmployees = employees.filter(
+    (emp) =>
+      emp.name?.toLowerCase().includes(search.toLowerCase()) ||
+      emp.email?.toLowerCase().includes(search.toLowerCase()) ||
+      emp.empCode?.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="container-fluid mt-5" >
       <div className="row">
@@ -131,7 +139,7 @@ function ViewEmployees() {
                     <PlusCircle className="me-1" />
                     Add Employee
                   </button>
-                  <button className="btn btn-outline-success btn-sm" onClick={() => downloadCSV(employees)}>
+                  <button className="btn btn-outline-success btn-sm" onClick={() => downloadCSV(filteredEmployees)}>
                     <i className="bi bi-download me-1"></i>
                     Export CSV
                   </button>
@@ -139,7 +147,18 @@ function ViewEmployees() {
               </div>
             }
           >
-            {employees.length === 0 ? (
+            {/* 🔹 Search input */}
+            <div className="mb-3">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search by name, email, or code..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+
+            {filteredEmployees.length === 0 ? (
               <div className="text-center py-5">
                 <div className="mb-3">
                   <i className="bi bi-people display-1 text-muted"></i>
@@ -187,7 +206,7 @@ function ViewEmployees() {
                     </tr>
                   </thead>
                   <tbody>
-                    {employees.map((emp) => (
+                    {filteredEmployees.map((emp) => (
                       <tr key={emp.employeeId || emp.email}>
                         <td>
                           <div className="d-flex gap-2">

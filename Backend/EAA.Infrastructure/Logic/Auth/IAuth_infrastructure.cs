@@ -10,5 +10,7 @@ namespace EAA.Infrastructure.Logic.Auth
     public interface IAuth_infrastructure
     {
         TblEmployee? ValidateUser(string Empcode, string Password);
+
+        bool SendEmployeeNotification(string toEmail, string empCode, string password);
     }
 }

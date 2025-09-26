@@ -183,5 +183,39 @@ namespace EAA.Services.Services.SelfAppraisal
 
             return response;
         }
+
+        public ApiResponse<List<GetAppraisalByEmployeeCycleDTO>> GetAppraisalByEmployeeAndCycle(int employeeId, int cycleId)
+        {
+            var response = new ApiResponse<List<GetAppraisalByEmployeeCycleDTO>>();
+
+            try
+            {
+                // Call infrastructure layer to get appraisal data for employee + cycle
+                var data = _selfAppraisal.GetAppraisalByEmployeeAndCycle(employeeId, cycleId);
+
+                if (data == null || !data.Any())
+                {
+                    response.StatusCode = 404;
+                    response.Message = $"No appraisals found for employee ID {employeeId} in cycle ID {cycleId}.";
+                    response.Data = new List<GetAppraisalByEmployeeCycleDTO>();
+                }
+                else
+                {
+                    response.StatusCode = 200;
+                    response.Message = "Appraisal retrieved successfully.";
+                    response.Data = data;
+                }
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, $"Error in SelfAppraisal_Services -> GetAppraisalByEmployeeAndCycle({employeeId}, {cycleId})");
+                response.StatusCode = 500;
+                response.Message = "Failed to retrieve appraisal.";
+                response.Data = new List<GetAppraisalByEmployeeCycleDTO>();
+            }
+
+            return response;
+        }
+
     }
 }

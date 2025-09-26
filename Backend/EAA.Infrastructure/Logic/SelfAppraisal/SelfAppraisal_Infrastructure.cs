@@ -219,5 +219,55 @@ namespace EAA.Infrastructure.Logic.SelfAppraisal
                 return null;
             }
         }
+
+
+            //get by employee id an cycle
+           public List<GetAppraisalByEmployeeCycleDTO> GetAppraisalByEmployeeAndCycle(int employeeId, int cycleId)
+{
+    try
+    {
+        var appraisals = _context.TblAppraisals
+            .Include(a => a.Employee)
+            .Include(a => a.Cycle)
+            .Include(a => a.TblAppraisalResponses)
+                .ThenInclude(r => r.Kpi)
+            .Where(a => a.EmployeeId == employeeId && a.CycleId == cycleId)
+            .Select(a => new GetAppraisalByEmployeeCycleDTO
+            {
+                AppraisalId = a.AppraisalId,
+                EmployeeId = a.EmployeeId ?? 0,
+                EmpCode = a.Employee.EmpCode,
+                EmployeeName = a.Employee.Name,
+                CycleId = a.CycleId,
+                CycleName = a.Cycle.CycleName,
+                FinancialYear = a.Cycle.Financialyear.Yearname ?? string.Empty,
+                Status = a.Status,
+                OverallSelfScore = a.OverallSelfScore,
+                OverallSupervisorScore = a.OverallSupervisorScore,
+                OverallAssociateComment = a.OverallAssociateComment,
+                OverallSupervisorComment = a.OverallSupervisorComment,
+                FinalRating = a.FinalRating,
+                KPIs = a.TblAppraisalResponses.Select(r => new KpiResponse_DTO
+                {
+                    KpiId = r.KpiId ?? 0,
+                    KpiName = r.Kpi != null ? r.Kpi.Title : string.Empty,
+                    SelfScore = r.SelfScore,
+                    SupervisorScore = r.SupervisorScore,
+                    AssociateComment = r.AssociateComment ?? string.Empty,
+                    SupervisorComment = r.SupervisorComment ?? string.Empty
+                }).ToList()
+            })
+            .ToList();
+
+        return appraisals;
+    }
+    catch (Exception ex)
+    {
+        _error.Capture(ex, $"Error in GetAppraisalByEmployeeAndCycle({employeeId}, {cycleId})");
+        return new List<GetAppraisalByEmployeeCycleDTO>();
+    }
+}
+
+
     }
 }
