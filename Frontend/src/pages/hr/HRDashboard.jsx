@@ -9,8 +9,9 @@ const HrDashboard = () => {
   const [appraisals, setAppraisals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState(""); // 🔹 search state
   const navigate = useNavigate();
-  const fetchedRef = useRef(false); // Prevent multiple fetches
+  const fetchedRef = useRef(false);
   const token = localStorage.getItem("token");
 
   // Fetch all appraisals once
@@ -65,6 +66,14 @@ const HrDashboard = () => {
     document.body.removeChild(link);
   };
 
+  // 🔹 Filter appraisals based on search
+  const filteredAppraisals = appraisals.filter(
+    (a) =>
+      a.employeeName?.toLowerCase().includes(search.toLowerCase()) ||
+      a.cycleName?.toLowerCase().includes(search.toLowerCase()) ||
+      a.status?.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="container-fluid mt-5">
       <div className="row">
@@ -90,6 +99,17 @@ const HrDashboard = () => {
               </div>
             }
           >
+            {/* 🔹 Search input */}
+            <div className="mb-3">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search by employee, cycle, or status..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+
             {error ? (
               <div className="text-center py-5">
                 <div className="mb-3">
@@ -110,7 +130,7 @@ const HrDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {appraisals.map((a) => (
+                    {filteredAppraisals.map((a) => (
                       <tr key={a.appraisalId}>
                         <td>
                           <button
@@ -123,11 +143,15 @@ const HrDashboard = () => {
                         <td>{a.employeeName}</td>
                         <td>{a.cycleName}</td>
                         <td>
-                          <span className={`badge ${
-                            a.status === "Submitted" ? "bg-primary bg-opacity-10 text-primary" :
-                            a.status === "Reviewed" ? "bg-success bg-opacity-10 text-success" :
-                            "bg-secondary bg-opacity-10 text-secondary"
-                          }`}>
+                          <span
+                            className={`badge ${
+                              a.status === "Submitted"
+                                ? "bg-primary bg-opacity-10 text-primary"
+                                : a.status === "Reviewed"
+                                ? "bg-success bg-opacity-10 text-success"
+                                : "bg-secondary bg-opacity-10 text-secondary"
+                            }`}
+                          >
                             {a.status}
                           </span>
                         </td>

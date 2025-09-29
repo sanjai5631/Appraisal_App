@@ -12,7 +12,7 @@ import {
   Accordion,
   Fade,
 } from "react-bootstrap";
-import CardWrapper from "../../Component/CardWrapper"; // ✅ use same wrapper
+import CardWrapper from "../../Component/CardWrapper";
 
 const ViewAppraisal = () => {
   const [appraisal, setAppraisal] = useState(null);

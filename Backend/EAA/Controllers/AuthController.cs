@@ -72,6 +72,7 @@ namespace EAA.Controllers
                     EmpCode = employee.EmpCode,
                     EmployeeId = employee.EmployeeId,
                     DeptId = employee.DeptId
+                    
                 };
 
                 return Ok(response);

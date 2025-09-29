@@ -21,6 +21,7 @@ import SelfAppraisalList from "./pages/selfAppraisal/selfAppraisalList";
 import SelfAppraisalForm from "./pages/selfAppraisal/SelfAppraisalForm";
 import UnitAppraisal from "./pages/manager/UnitAppraisal";
 import ViewAppraisal from "./pages/hr/ViewAppraisal";
+import Profile from "./pages/employee/Profile";
 
 function AppContent() {
   const { isLoggedIn, role } = useAuth();
@@ -139,6 +140,15 @@ function AppContent() {
               </RequireAuth>
             }
           />
+
+          <Route
+              path="/profile"
+              element={
+                <RequireAuth allowedRoles={["hr", "manager", "employee"]}>
+                  <Profile />
+                </RequireAuth>
+              }
+            />
 
         {/* Default redirect after login */}
         <Route

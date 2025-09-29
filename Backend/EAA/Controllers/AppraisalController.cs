@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace EAA.Controllers
 {
@@ -57,13 +58,13 @@ namespace EAA.Controllers
 
         // POST: api/Appraisal/SubmitSelfAppraisal
         [HttpPost("SubmitSelfAppraisal")]
-        public IActionResult SubmitAppraisal([FromBody] AppraisalDTO request)
+        public async Task<IActionResult> SubmitAppraisal([FromBody] AppraisalDTO request)
         {
             try
             {
                 var createdBy = User.FindFirstValue("EmployeeId");
                 request.CreatedBy = Convert.ToInt32(createdBy);
-                var response = _appraisalService.SubmitAppraisal(request);
+                var response =_appraisalService.SubmitAppraisal(request);
 
                 if (!response.Data)
                 {

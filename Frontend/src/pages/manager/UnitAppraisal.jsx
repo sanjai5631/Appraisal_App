@@ -1,3 +1,4 @@
+// src/pages/appraisal/UnitAppraisal.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PencilSquare, Eye } from "react-bootstrap-icons";
@@ -9,6 +10,7 @@ import Swal from "sweetalert2";
 const UnitAppraisal = () => {
   const [appraisals, setAppraisals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState(""); // 🔹 same as ViewEmployees
   const navigate = useNavigate();
 
   const employeeId = localStorage.getItem("employeeId");
@@ -66,12 +68,19 @@ const UnitAppraisal = () => {
     }
   }, [employeeId]);
 
+  // 🔹 Simple client-side search filter (like ViewEmployees)
+  const filteredAppraisals = appraisals.filter(
+    (a) =>
+      a.empCode?.toLowerCase().includes(search.toLowerCase()) ||
+      a.employeeName?.toLowerCase().includes(search.toLowerCase()) ||
+      a.cycleName?.toLowerCase().includes(search.toLowerCase()) ||
+      a.financialYear?.toString().includes(search.toLowerCase()) ||
+      a.status?.toLowerCase().includes(search.toLowerCase())
+  );
+
   // CSV download
   const downloadCSV = (data) => {
-    if (!data?.length) {
-      Swal.fire({ icon: "info", title: "No Data", text: "No appraisal data to export." });
-      return;
-    }
+    if (!data || !data.length) return;
 
     const headers = ["Emp Code", "Employee Name", "Cycle", "Financial Year", "Status", "Overall Score"];
     const rows = data.map((row) => [
@@ -91,11 +100,8 @@ const UnitAppraisal = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
-    Swal.fire({ icon: "success", title: "CSV Downloaded", timer: 1500, showConfirmButton: false });
   };
 
-  // Map API response to form-compatible structure
   const mapAppraisalForForm = (appraisal) => {
     const kpiResponsesFull = (appraisal.kpiResponses || []).map((item) => ({
       kpiId: item.kpiId,
@@ -108,14 +114,9 @@ const UnitAppraisal = () => {
       supervisorComment: item.supervisorComment || "",
       responseId: item.responseId || null,
     }));
-
-    return {
-      ...appraisal,
-      kpiResponses: kpiResponsesFull,
-    };
+    return { ...appraisal, kpiResponses: kpiResponsesFull };
   };
 
-  // Navigate to edit/review form
   const handleReview = (appraisal) => {
     navigate("/manager-review", {
       state: {
@@ -123,25 +124,23 @@ const UnitAppraisal = () => {
         empId: appraisal.employeeId,
         appraisalId: appraisal.appraisalId,
         viewMode: false,
-        key: Date.now(), // force re-render
+        key: Date.now(),
       },
     });
   };
 
-  // Navigate to view-only form
   const handleView = (appraisal) => {
     if (!appraisal?.appraisalId) {
       Swal.fire("Error", "Appraisal ID missing", "error");
       return;
     }
-
     navigate("/manager-review", {
       state: {
         appraisalData: mapAppraisalForForm(appraisal),
         empId: appraisal.employeeId,
         appraisalId: appraisal.appraisalId,
         viewMode: true,
-        key: Date.now(), // force re-render
+        key: Date.now(),
       },
     });
   };
@@ -183,11 +182,7 @@ const UnitAppraisal = () => {
       ),
       sortable: true,
     },
-    {
-      name: "Overall Score",
-      selector: (row) => row.overallSelfScore?.toFixed(2) || 0,
-      sortable: true,
-    },
+    { name: "Overall Score", selector: (row) => row.overallSelfScore?.toFixed(2) || 0, sortable: true },
   ];
 
   return (
@@ -204,16 +199,28 @@ const UnitAppraisal = () => {
                   <h4 className="mb-0 text-dark">Unit Appraisals</h4>
                   <small className="text-muted">Total: {appraisals.length} Appraisals</small>
                 </div>
-                <div>
-                  <button className="btn btn-outline-primary btn-sm" onClick={() => downloadCSV(appraisals)}>
-                    <i className="bi bi-download me-1"></i> Export CSV
-                  </button>
-                </div>
+                <button
+                  className="btn btn-outline-primary btn-sm"
+                  onClick={() => downloadCSV(filteredAppraisals)}
+                >
+                  <i className="bi bi-download me-1"></i> Export CSV
+                </button>
               </div>
             }
           >
-            {appraisals.length > 0 ? (
-              <DataTable columns={columns} data={appraisals} pagination highlightOnHover dense />
+            {/* 🔹 Search input above table */}
+            <div className="mb-3">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search by code, name, cycle, year, or status..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+
+            {filteredAppraisals.length > 0 ? (
+              <DataTable columns={columns} data={filteredAppraisals} pagination highlightOnHover dense />
             ) : loading ? null : (
               <div className="text-center py-5 text-muted">
                 <i className="bi bi-journal-text display-1 mb-3"></i>

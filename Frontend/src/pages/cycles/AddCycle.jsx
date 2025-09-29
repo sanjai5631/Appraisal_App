@@ -8,8 +8,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import CardWrapper from "../../Component/CardWrapper";
 
 const createApiUrl = "https://localhost:7098/api/Cycle/CreateCycle";
-const updateApiUrl = "https://localhost:7098/api/Cycle/DeleteCycle?CycleId";
+const updateApiUrl = "https://localhost:7098/api/Cycle/UpdateCycle"; // ✅ fixed
 const financialYearApiUrl = "https://localhost:7098/api/Financial/GetAllFinancialYears";
+const getCyclesApiUrl = "https://localhost:7098/api/Cycle/GetAllCycles";
 
 const cycleOptions = [
   { id: 1, name: "Term-1 (APR-JUL)", startDate: "2025-08-01", endDate: "2025-08-31" },
@@ -23,6 +24,7 @@ const AddCycle = () => {
   const cycleData = location.state?.cycle || null;
 
   const [financialYears, setFinancialYears] = useState([]);
+  const [existingCycles, setExistingCycles] = useState([]);
   const [serverErrors, setServerErrors] = useState({});
 
   useEffect(() => {
@@ -37,7 +39,22 @@ const AddCycle = () => {
         Swal.fire("Error", "Failed to fetch financial years.", "error");
       }
     };
+
+    const fetchCycles = async () => {
+      try {
+        const res = await axios.get(getCyclesApiUrl, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        const cycles = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        setExistingCycles(cycles);
+      } catch (err) {
+        console.error("Error fetching cycles:", err);
+        setExistingCycles([]);
+      }
+    };
+
     fetchFinancialYears();
+    fetchCycles();
   }, []);
 
   const initialValues = {
@@ -59,12 +76,26 @@ const AddCycle = () => {
       return;
     }
 
+    // ✅ Duplicate check
+    const duplicate = existingCycles.find(
+      (c) =>
+        c.financialYearId === Number(values.financialyearid) &&
+        c.cycleName.toLowerCase() === values.cycleName.toLowerCase() &&
+        (!cycleData || c.cycleId !== cycleData.cycleId) // allow updating itself
+    );
+
+    if (duplicate) {
+      await Swal.fire("Warning", "This cycle already exists for the selected financial year.", "warning");
+      setSubmitting(false);
+      return;
+    }
+
     const payload = {
       cycleName: values.cycleName,
       startDate: values.startDate,
       endDate: values.endDate,
       financialyearid: Number(values.financialyearid),
-      statusId: cycleData ? Number(values.statusId) : 1, 
+      statusId: cycleData ? Number(values.statusId) : 1,
       createdBy: Number(values.createdBy),
       modifiedBy: Number(values.modifiedBy),
     };
@@ -74,14 +105,14 @@ const AddCycle = () => {
         await axios.put(`${updateApiUrl}?CycleId=${cycleData.cycleId}`, payload, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        await Swal.fire("Updated", "Cycle updated successfully", "success"); // wait for alert
+        await Swal.fire("Updated", "Cycle updated successfully", "success");
       } else {
         await axios.post(createApiUrl, payload, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        await Swal.fire("Created", "Cycle created successfully", "success"); // wait for alert
+        await Swal.fire("Created", "Cycle created successfully", "success");
       }
-      navigate("/appraisal-cycle"); // navigate after alert closes
+      navigate("/appraisal-cycle");
     } catch (err) {
       console.error("Error saving cycle:", err.response?.data || err.message);
 
@@ -172,14 +203,14 @@ const AddCycle = () => {
                       )}
                     </Col>
 
-                      <Col md={4}>
+                    <Col md={4}>
                       <label className="form-label fw-semibold">Status</label>
                       <select
                         className="form-select"
                         name="statusId"
                         value={values.statusId}
                         onChange={handleChange}
-                        disabled={!cycleData} // ✅ Disable dropdown if creating a new cycle
+                        disabled={!cycleData}
                       >
                         <option value={1}>Active</option>
                         <option value={2}>Inactive</option>

@@ -1,4 +1,5 @@
-﻿using EAA.Domain.DTO.Request.Appraisal;
+﻿using EAA.Application;
+using EAA.Domain.DTO.Request.Appraisal;
 using EAA.Domain.DTO.Response.Appraisal;
 using EAA.Domain.Models;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +11,12 @@ namespace EAA.Infrastructure.Logic.Appraisal
     public class Appraisal_infrastructure : IAppraisal_infrastructure
     {
         private readonly DbAppraisalContext _context;
+        private readonly IEmailService _emailService;
 
-        public Appraisal_infrastructure(DbAppraisalContext context)
+        public Appraisal_infrastructure(DbAppraisalContext context,IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         // Fetch the current appraisal form for an employee in a cycle
@@ -136,11 +139,12 @@ namespace EAA.Infrastructure.Logic.Appraisal
 
         // Submit a self-appraisal (or new appraisal)
         public bool SubmitAppraisal(AppraisalDTO request)
-         {
+        {
             TblAppraisal appraisal;
 
             if (request.AppraisalId.HasValue)
             {
+                // Update existing appraisal
                 appraisal = _context.TblAppraisals
                     .Include(a => a.TblAppraisalResponses)
                     .FirstOrDefault(a => a.AppraisalId == request.AppraisalId.Value);
@@ -148,17 +152,14 @@ namespace EAA.Infrastructure.Logic.Appraisal
                 if (appraisal == null)
                     return false;
 
-                // Update existing appraisal
                 appraisal.OverallSelfScore = request.OverallSelfScore;
                 appraisal.Status = request.Status ?? "Pending";
                 appraisal.ModifiedOn = DateTime.Now;
                 appraisal.ModifiedBy = request.CreatedBy;
-                appraisal.OverallAssociateComment = request.OverallAssociateComment;      
+                appraisal.OverallAssociateComment = request.OverallAssociateComment;
                 appraisal.OverallSupervisorComment = request.OverallSupervisorComment;
-                appraisal.OverallSelfScore = request.OverallSelfScore;
                 appraisal.OverallSupervisorScore = request.OverallSupervisorScore;
                 appraisal.FinalRating = request.FinalRating;
-
 
                 // Remove old KPI responses
                 _context.TblAppraisalResponses.RemoveRange(appraisal.TblAppraisalResponses);
@@ -181,7 +182,6 @@ namespace EAA.Infrastructure.Logic.Appraisal
                     OverallSupervisorComment = request.OverallSupervisorComment,
                 };
                 _context.TblAppraisals.Add(appraisal);
-
             }
 
             // Add KPI responses
@@ -200,8 +200,22 @@ namespace EAA.Infrastructure.Logic.Appraisal
             }
 
             _context.SaveChanges();
+
+            // ✅ Send email to manager
+            var employee = _context.TblEmployees.FirstOrDefault(e => e.EmployeeId == request.EmployeeId);
+            if (employee?.Email != null)
+            {
+                var subject = $"Appraisal Submitted by {employee.Name}";
+                var body = $"<p>Employee <strong>{employee.Name}</strong> has submitted their appraisal for cycle {request.CycleId}.</p>" +
+                           $"<p><a href='https://yourapp.com/appraisals/{appraisal.AppraisalId}'>Click here to review</a></p>";
+
+                // Injected IEmailService (assume _emailService is available in this class)
+                _emailService.SendEmailAsync(employee.Email, subject, body).GetAwaiter().GetResult();
+            }
+
             return true;
         }
+
 
         // Submit a manager review for an existing appraisal
         public bool SubmitManagerReview(AppraisalDTO request, int managerId)

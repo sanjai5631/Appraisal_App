@@ -125,7 +125,7 @@ namespace EAA.Infrastructure.Logic.EmployeeDetails
 
 
 
-        // Sava employee
+        // Save employee
         public EmployeeResponse_DTO SaveEmployee(EmployeeRequest_DTO employeeRequest)
         {
             try
