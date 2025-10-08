@@ -1,4 +1,5 @@
 ﻿using EAA.Domain.DTO.Request.Appraisal;
+using EAA.Domain.DTO.Request.Mail;
 using EAA.Domain.DTO.Response.Appraisal;
 
 namespace EAA.Infrastructure.Logic.Appraisal
@@ -15,5 +16,9 @@ namespace EAA.Infrastructure.Logic.Appraisal
         List<UnitAppraisalResponseDTO> GetUnitAppraisals(int managerId, int? cycleId = null);
 
         bool UpdateAppraisal(int appraisalId, AppraisalDTO request);
+
+        EmployeeDTO GetEmployeeById(int employeeId);
+        EmployeeDTO GetManagerByUnit(int unitId);
+
     }
 }

@@ -1,5 +1,6 @@
 ﻿using EAA.Application;
 using EAA.Domain.DTO.Request.Appraisal;
+using EAA.Domain.DTO.Request.Mail;
 using EAA.Domain.DTO.Response.Appraisal;
 using EAA.Infrastructure.Logic.Appraisal;
 using System;
@@ -33,6 +34,60 @@ namespace EAA.Services.Services.Appraisal
                 _error.Capture(ex, "Appraisal_Services -> GetCurrentForm");
                 response.StatusCode = 500;
                 response.Message = "Failed to retrieve appraisal form";
+            }
+            return response;
+        }
+
+        public ApiResponse<EmployeeDTO> GetEmployeeById(int employeeId)
+        {
+            var response = new ApiResponse<EmployeeDTO>();
+            try
+            {
+                var employee = _appraisalInfra.GetEmployeeById(employeeId);
+                if (employee == null)
+                {
+                    response.StatusCode = 404;
+                    response.Message = "Employee not found";
+                }
+                else
+                {
+                    response.StatusCode = 200;
+                    response.Message = "Employee fetched successfully";
+                    response.Data = employee;
+                }
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, "Error in Appraisal_Services -> GetEmployeeById");
+                response.StatusCode = 500;
+                response.Message = "Failed to fetch employee";
+            }
+            return response;
+        }
+
+        public ApiResponse<EmployeeDTO> GetManagerByUnit(int unitId)
+        {
+            var response = new ApiResponse<EmployeeDTO>();
+            try
+            {
+                var manager = _appraisalInfra.GetManagerByUnit(unitId);
+                if (manager == null)
+                {
+                    response.StatusCode = 404;
+                    response.Message = "Manager not found";
+                }
+                else
+                {
+                    response.StatusCode = 200;
+                    response.Message = "Manager fetched successfully";
+                    response.Data = manager;
+                }
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, "Error in Appraisal_Services -> GetManagerByUnit");
+                response.StatusCode = 500;
+                response.Message = "Failed to fetch manager";
             }
             return response;
         }

@@ -1,4 +1,5 @@
 ﻿using EAA.Domain.DTO.Request.Cycle;
+using EAA.Domain.DTO.Request.Mail;
 using EAA.Domain.DTO.Response.Cycle;
 using System;
 using System.Collections.Generic;
@@ -15,5 +16,7 @@ namespace EAA.Infrastructure.Logic.Cycle
         CycleResponse_DTO SaveCycle(CycleRequest_DTO request);
         UpdateCycleResponse_DTO UpdateCycle(int cycleId, UpdateCycleRequest_DTO request);
         string DeleteCycle(int cycleId);
+        EmployeeDTO GetEmployeeById(int employeeId);
+        List<EmployeeDTO> GetAllManagers();
     }
 }

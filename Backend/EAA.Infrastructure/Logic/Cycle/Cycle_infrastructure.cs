@@ -1,5 +1,6 @@
 ﻿using EAA.Application;
 using EAA.Domain.DTO.Request.Cycle;
+using EAA.Domain.DTO.Request.Mail;
 using EAA.Domain.DTO.Response.Cycle;
 using EAA.Domain.Models;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +42,7 @@ namespace EAA.Infrastructure.Logic.Cycle
                         ModifiedOn = c.ModifiedOn,
                         CreatedBy = c.CreatedByNavigation != null ? c.CreatedByNavigation.Name : null,
                         ModifiedBy = c.ModifiedByNavigation != null ? c.ModifiedByNavigation.Name : null,
-                        FinancialYearId = c.Financialyearid,
+                        FinancialYearId = c.Financialyearid??0,
                         FinancialYearName = c.Financialyear != null ? c.Financialyear.Yearname : null
                     })
                     .ToList();
@@ -79,7 +80,7 @@ namespace EAA.Infrastructure.Logic.Cycle
                     ModifiedOn = cycle.ModifiedOn,
                     CreatedBy = cycle.CreatedByNavigation?.Name,
                     ModifiedBy = cycle.ModifiedByNavigation?.Name,
-                    FinancialYearId = cycle.Financialyearid,
+                    FinancialYearId = cycle.Financialyearid??0,
                     FinancialYearName = cycle.Financialyear?.Yearname
                 };
             }
@@ -95,38 +96,61 @@ namespace EAA.Infrastructure.Logic.Cycle
         {
             try
             {
-                //var hr = _context.TblEmployees
-                //    .Include(e => e.Role)
-                //    .FirstOrDefault(e => e.EmployeeId == request.CreatedBy);
+                // ✅ Validate financial year
+                var financialYear = _context.TblFinancialyears
+                    .FirstOrDefault(f => f.Financialyearid == request.Financialyearid);
+                if (financialYear == null)
+                {
+                    _error.Capture(new Exception("Invalid Financial Year"), "SaveCycle");
+                    return null;
+                }
 
-                //if (hr == null || hr.Role?.RoleName != "HR")
-                //{
-                //    _error.Capture(new Exception("Unauthorized"), "Only HR can create cycles");
-                //    return null;
-                //}
+                // ✅ Optional: validate HR role
+                var hr = _context.TblEmployees
+                    .FirstOrDefault(e => e.EmployeeId == request.CreatedBy);
+                if (hr == null /* || hr.Role?.RoleName != "HR" */)
+                {
+                    _error.Capture(new Exception("Unauthorized"), "Only HR can create cycles");
+                    return null;
+                }
 
+                // ✅ Save cycle
                 var cycle = new TblAppraisalCycle
                 {
                     CycleName = request.CycleName,
                     StartDate = DateOnly.FromDateTime(request.StartDate),
                     EndDate = DateOnly.FromDateTime(request.EndDate),
-                    StatusId = request.StatusId,
+                    StatusId = request.StatusId ?? 1,
                     Financialyearid = request.Financialyearid,
-                    CreatedBy = 3,
+                    CreatedBy = request.CreatedBy,
                     CreatedOn = DateTime.Now
                 };
 
                 _context.TblAppraisalCycles.Add(cycle);
                 _context.SaveChanges();
 
-                return GetCycleById(cycle.CycleId);
+                // ✅ Map to DTO with names for email readability
+                return new CycleResponse_DTO
+                {
+                    CycleId = cycle.CycleId,
+                    CycleName = cycle.CycleName,
+                    StartDate = request.StartDate,
+                    EndDate = request.EndDate,
+                    Status = cycle.StatusId == 1 ? "Active" : "Inactive",
+                    CreatedOn = cycle.CreatedOn,
+                    CreatedBy = hr.Name,
+                    FinancialYearId = financialYear.Financialyearid,
+                    FinancialYearName = financialYear.Yearname
+                };
             }
             catch (Exception ex)
             {
-                _error.Capture(ex, "Error in Cycle_infrastructure -> SaveCycle");
+                _error.Capture(ex, "Error in SaveCycle");
                 return null;
             }
         }
+
+
 
         // Update cycle
         public UpdateCycleResponse_DTO UpdateCycle(int cycleId, UpdateCycleRequest_DTO request)
@@ -209,6 +233,34 @@ namespace EAA.Infrastructure.Logic.Cycle
                 _error.Capture(ex, $"Error in Cycle_infrastructure -> DeleteCycle({cycleId})");
                 return $"Error deleting cycle: {ex.Message}";
             }
+        }
+
+        public EmployeeDTO GetEmployeeById(int employeeId)
+        {
+            var emp = _context.TblEmployees
+                .FirstOrDefault(e => e.EmployeeId == employeeId);
+
+            if (emp == null) return null!;
+
+            return new EmployeeDTO
+            {
+                EmployeeId = emp.EmployeeId,
+                Name = emp.Name,
+                Email = emp.Email
+            };
+        }
+
+        public List<EmployeeDTO> GetAllManagers()
+        {
+            return _context.TblEmployees
+                .Where(e => e.Role.RoleName == "Manager") // Assuming Role navigation property exists
+                .Select(e => new EmployeeDTO
+                {
+                    EmployeeId = e.EmployeeId,
+                    Name = e.Name,
+                    Email = e.Email
+                })
+                .ToList();
         }
     }
 }

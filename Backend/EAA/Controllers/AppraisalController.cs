@@ -17,11 +17,13 @@ namespace EAA.Controllers
     {
         private readonly IAppraisal_Services _appraisalService;
         private readonly ErrorHandler _error;
+        private readonly IEmailService _emailService;
 
-        public AppraisalController(IAppraisal_Services appraisalService, ErrorHandler error)
+        public AppraisalController(IAppraisal_Services appraisalService, ErrorHandler error , IEmailService emailService)
         {
             _appraisalService = appraisalService;
             _error = error;
+            _emailService = emailService;
         }
 
         // GET: api/Appraisal/GetCurrentForm?employeeId=1&cycleId=1
@@ -62,9 +64,12 @@ namespace EAA.Controllers
         {
             try
             {
+                // ✅ Get logged-in user's EmployeeId
                 var createdBy = User.FindFirstValue("EmployeeId");
                 request.CreatedBy = Convert.ToInt32(createdBy);
-                var response =_appraisalService.SubmitAppraisal(request);
+
+                // ✅ Submit appraisal
+                var response = _appraisalService.SubmitAppraisal(request);
 
                 if (!response.Data)
                 {
@@ -74,6 +79,32 @@ namespace EAA.Controllers
                         Message = "Failed to submit self-appraisal.",
                         Data = false
                     });
+                }
+
+                // ✅ Get employee details
+                var employeeResponse = _appraisalService.GetEmployeeById(request.CreatedBy ?? 0);
+                if (employeeResponse.StatusCode == 200 && employeeResponse.Data != null)
+                {
+                    var employee = employeeResponse.Data;
+
+                    // ✅ Get manager of the employee's unit
+                    var managerResponse = _appraisalService.GetManagerByUnit(employee.UnitId??0);
+                    if (managerResponse.StatusCode == 200 && managerResponse.Data != null)
+                    {
+                        var manager = managerResponse.Data;
+
+                        if (!string.IsNullOrEmpty(manager.Email))
+                        {
+                            var subject = $"Self-Appraisal Submitted by {employee.Name}";
+                            var body = $@"
+<p>Dear {manager.Name},</p>
+<p>Employee <strong>{employee.Name}</strong> has submitted their self-appraisal for cycle {request.CycleId}.</p>
+<p><a href='https://yourapp.com/appraisals/{request.CycleId}'>Click here to review the appraisal</a></p>";
+
+                            // ✅ Send email asynchronously
+                            await _emailService.SendEmailAsync(manager.Email, subject, body);
+                        }
+                    }
                 }
 
                 return Ok(response);
@@ -89,6 +120,7 @@ namespace EAA.Controllers
                 });
             }
         }
+
 
         // POST: api/Appraisal/SubmitManagerAppraisal?managerId=5
         [HttpPost("SubmitManagerAppraisal")]

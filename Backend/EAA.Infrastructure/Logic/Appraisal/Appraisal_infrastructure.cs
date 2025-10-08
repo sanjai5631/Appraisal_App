@@ -1,5 +1,6 @@
 ﻿using EAA.Application;
 using EAA.Domain.DTO.Request.Appraisal;
+using EAA.Domain.DTO.Request.Mail;
 using EAA.Domain.DTO.Response.Appraisal;
 using EAA.Domain.Models;
 using Microsoft.EntityFrameworkCore;
@@ -54,6 +55,39 @@ namespace EAA.Infrastructure.Logic.Appraisal
                     AssociateComment = r.AssociateComment,
                     SupervisorComment = r.SupervisorComment
                 }).ToList()
+            };
+        }
+
+        public EmployeeDTO GetEmployeeById(int employeeId)
+        {
+            var emp = _context.TblEmployees
+                .FirstOrDefault(e => e.EmployeeId == employeeId);
+
+            if (emp == null) return null!;
+
+            return new EmployeeDTO
+            {
+                EmployeeId = emp.EmployeeId,
+                Name = emp.Name,
+                Email = emp.Email,
+                UnitId = emp.UnitId
+            };
+        }
+        public EmployeeDTO GetManagerByUnit(int unitId)
+        {
+            // Assuming "Manager" is stored in Role.RoleName
+            var manager = _context.TblEmployees
+                .Where(e => e.UnitId == unitId && e.Role.RoleName == "Manager")
+                .FirstOrDefault();
+
+            if (manager == null) return null!;
+
+            return new EmployeeDTO
+            {
+                EmployeeId = manager.EmployeeId,
+                Name = manager.Name,
+                Email = manager.Email,
+                UnitId = manager.UnitId
             };
         }
 
@@ -134,7 +168,6 @@ namespace EAA.Infrastructure.Logic.Appraisal
 
             return result;
         }
-
 
 
         // Submit a self-appraisal (or new appraisal)

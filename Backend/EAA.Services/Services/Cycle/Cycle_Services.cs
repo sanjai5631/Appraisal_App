@@ -1,5 +1,6 @@
 ﻿using EAA.Application;
 using EAA.Domain.DTO.Request.Cycle;
+using EAA.Domain.DTO.Request.Mail;
 using EAA.Domain.DTO.Response.Cycle;
 using EAA.Infrastructure.Logic.Cycle;
 using System;
@@ -133,6 +134,56 @@ namespace EAA.Services.Services.Cycle
                 _error.Capture(ex, "Error in Cycle_Services -> DeleteCycle");
                 response.StatusCode = 500;
                 response.Message = "Failed to delete cycle";
+            }
+            return response;
+        }
+
+        public ApiResponse<EmployeeDTO> GetEmployeeById(int employeeId)
+        {
+            var response = new ApiResponse<EmployeeDTO>();
+            try
+            {
+                var emp = _cycleInfra.GetEmployeeById(employeeId); // infrastructure method
+                if (emp != null)
+                {
+                    response.Data = emp;
+                    response.StatusCode = 200;
+                    response.Message = "Employee found";
+                }
+                else
+                {
+                    response.Data = null;
+                    response.StatusCode = 404;
+                    response.Message = "Employee not found";
+                }
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, $"Error in Cycle_Services -> GetEmployeeById({employeeId})");
+                response.Data = null;
+                response.StatusCode = 500;
+                response.Message = "Failed to fetch employee";
+            }
+            return response;
+        }
+
+
+        public ApiResponse<List<EmployeeDTO>> GetAllManagers()
+        {
+            var response = new ApiResponse<List<EmployeeDTO>>();
+            try
+            {
+                var managers = _cycleInfra.GetAllManagers(); // infrastructure method
+                response.Data = managers;
+                response.StatusCode = managers.Any() ? 200 : 404;
+                response.Message = managers.Any() ? "Managers fetched successfully" : "No managers found";
+            }
+            catch (Exception ex)
+            {
+                _error.Capture(ex, "Error in Cycle_Services -> GetAllManagers");
+                response.Data = null;
+                response.StatusCode = 500;
+                response.Message = "Failed to fetch managers";
             }
             return response;
         }

@@ -1,5 +1,6 @@
 ﻿using EAA.Application;
 using EAA.Domain.DTO.Request.Cycle;
+using EAA.Domain.DTO.Request.Mail;
 using EAA.Domain.DTO.Response.Cycle;
 using System.Collections.Generic;
 
@@ -12,5 +13,7 @@ namespace EAA.Services.Services.Cycle
         ApiResponse<CycleResponse_DTO> SaveCycle(CycleRequest_DTO request);
         ApiResponse<UpdateCycleResponse_DTO> UpdateCycle(int cycleId, UpdateCycleRequest_DTO request);
         ApiResponse<string> DeleteCycle(int cycleId);
+        ApiResponse<EmployeeDTO >GetEmployeeById(int employeeId);
+        ApiResponse<List<EmployeeDTO>> GetAllManagers();
     }
 }

@@ -72,7 +72,6 @@ namespace EAA.Controllers
             {
                 var createdBy = User.FindFirstValue("EmployeeId");
                 employeeRequest.CreatedBy = Convert.ToInt32(createdBy);
-            
                 var result = await _user.SaveEmployee(employeeRequest);
                 return Ok(result); 
             }
